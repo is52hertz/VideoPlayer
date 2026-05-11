@@ -1,8 +1,11 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import SwiftData
 
 struct ContentView: View {
     @Bindable var viewModel: PlayerViewModel
+    @Environment(\.modelContext) private var modelContext
+    @Query private var allRecents: [RecentVideo]
 
     var body: some View {
         ZStack {
@@ -31,9 +34,29 @@ struct ContentView: View {
                 print("Error picking file: \(error.localizedDescription)")
             }
         }
+        .onChange(of: viewModel.videoURL) { _, newURL in
+            guard let url = newURL else { return }
+            saveRecentVideo(url: url, title: viewModel.videoTitle)
+        }
     }
 
+    private func saveRecentVideo(url: URL, title: String) {
+        let existing = allRecents.first(where: { $0.url == url })
+        if let existing {
+            existing.lastOpened = Date()
+            existing.title = title
+        } else {
+            let newRecent = RecentVideo(url: url, title: title)
+            modelContext.insert(newRecent)
+        }
+        try? modelContext.save()
+    }
+
+    @ViewBuilder
     private var idleView: some View {
+        #if os(macOS)
+        WelcomeView()
+        #else
         VStack(spacing: 24) {
             Image(systemName: "play.rectangle")
                 .font(.system(size: 48))
@@ -46,6 +69,7 @@ struct ContentView: View {
             GlassButton(systemName: "folder", action: { viewModel.isShowingFilePicker = true })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        #endif
     }
 
     private var loadingView: some View {

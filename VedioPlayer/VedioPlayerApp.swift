@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct VedioPlayerApp: App {
@@ -17,6 +18,7 @@ struct VedioPlayerApp: App {
                     viewModel.loadVideo(url: url)
                 }
         }
+        .modelContainer(for: RecentVideo.self)
         #if os(macOS)
         .defaultSize(width: 900, height: 600)
         .commands {

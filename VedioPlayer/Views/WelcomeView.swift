@@ -1,0 +1,184 @@
+import SwiftUI
+import SwiftData
+import UniformTypeIdentifiers
+
+#if os(macOS)
+struct WelcomeView: View {
+    @Environment(PlayerViewModel.self) private var viewModel
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \RecentVideo.lastOpened, order: .reverse) private var recentVideos: [RecentVideo]
+
+    private let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "VedioPlayer"
+    private let appVersion = "Version Preview"
+
+    var body: some View {
+        @Bindable var viewModel = viewModel
+        HStack(spacing: 0) {
+            // Left Pane: Info and Actions
+            VStack(spacing: 0) {
+                Spacer()
+
+                // App Icon area
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(red: 0.2, green: 0.3, blue: 0.5), Color(red: 0.1, green: 0.15, blue: 0.3)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 128, height: 128)
+                        .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+                    
+                    Image(systemName: "play.square.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(.white)
+                }
+                .padding(.bottom, 24)
+
+                Text(appName)
+                    .font(.system(size: 32, weight: .bold))
+                
+                Text(appVersion)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 48)
+
+                // Actions
+                VStack(spacing: 12) {
+                    WelcomeActionButton(
+                        icon: "folder",
+                        title: "Open Finder...",
+                        action: { viewModel.isShowingFilePicker = true }
+                    )
+                    
+                    WelcomeActionButton(
+                        icon: "photo.on.rectangle",
+                        title: "Open Photos...",
+                        action: {
+                            // Placeholder
+                        }
+                    )
+                    
+                    WelcomeActionButton(
+                        icon: "gearshape",
+                        title: "Settings...",
+                        action: {
+                            // Placeholder
+                        }
+                    )
+                }
+                .padding(.horizontal, 40)
+                
+                Spacer()
+            }
+            .frame(width: 360)
+            .background(Color(NSColor.windowBackgroundColor))
+            
+            Divider()
+                .ignoresSafeArea()
+
+            // Right Pane: Recent Files
+            VStack(alignment: .leading, spacing: 0) {
+                if recentVideos.isEmpty {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Text("No Recent Videos")
+                                .font(.title3)
+                                .foregroundStyle(.tertiary)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                } else {
+                    List {
+                        ForEach(recentVideos) { video in
+                            Button(action: {
+                                viewModel.loadVideo(url: video.url)
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "doc.richtext.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue)
+                                        .frame(width: 40, height: 40)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(video.title)
+                                            .font(.headline)
+                                            .lineLimit(1)
+                                        
+                                        Text(video.url.path)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.vertical, 4)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .listStyle(.sidebar)
+                }
+            }
+            .frame(minWidth: 400, maxWidth: .infinity)
+            .background(Color(NSColor.controlBackgroundColor))
+        }
+        .frame(minWidth: 760, minHeight: 480)
+        // Enable file dropping on the welcome screen
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            viewModel.handleDrop(providers: providers)
+        }
+        // Handle file picker result
+        .fileImporter(
+            isPresented: $viewModel.isShowingFilePicker,
+            allowedContentTypes: viewModel.videoTypes
+        ) { result in
+            switch result {
+            case .success(let url):
+                viewModel.loadVideo(url: url)
+            case .failure(let error):
+                print("Error picking file: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+
+private struct WelcomeActionButton: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+    
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .frame(width: 24)
+                
+                Text(title)
+                    .font(.headline)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background(isHovered ? Color.secondary.opacity(0.1) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+#endif
