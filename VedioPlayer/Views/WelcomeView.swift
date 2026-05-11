@@ -148,9 +148,11 @@ struct WelcomeView: View {
                 }
                 .frame(width: geometry.size.width * 0.25)
             }
+            .ignoresSafeArea()
         }
         .frame(minWidth: 800, minHeight: 500)
         .background(.ultraThinMaterial)
+        .ignoresSafeArea()
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
