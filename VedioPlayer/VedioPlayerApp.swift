@@ -20,6 +20,7 @@ struct VedioPlayerApp: App {
         }
         .modelContainer(for: RecentVideo.self)
         #if os(macOS)
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 900, height: 600)
         .commands {
             CommandGroup(after: .newItem) {

@@ -169,41 +169,6 @@ struct WelcomeView: View {
                 print("Error picking file: \(error.localizedDescription)")
             }
         }
-        .background(WelcomeWindowConfigurator())
-    }
-}
-
-private struct WelcomeWindowConfigurator: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let view = ConfiguratorView()
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {}
-
-    private class ConfiguratorView: NSView {
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            NotificationCenter.default.addObserver(self, selector: #selector(configureWindow), name: NSWindow.didBecomeKeyNotification, object: window)
-            configureWindow()
-        }
-
-        @objc private func configureWindow() {
-            DispatchQueue.main.async {
-                guard let window = self.window else { return }
-                window.titleVisibility = .hidden
-                window.titlebarAppearsTransparent = true
-                window.styleMask.insert(.fullSizeContentView)
-                window.standardWindowButton(.closeButton)?.isHidden = true
-                window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-                window.standardWindowButton(.zoomButton)?.isHidden = true
-                window.isMovableByWindowBackground = true
-            }
-        }
-        
-        deinit {
-            NotificationCenter.default.removeObserver(self)
-        }
     }
 }
 
