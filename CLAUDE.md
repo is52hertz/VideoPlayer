@@ -147,6 +147,21 @@ Before finishing any task, check:
 * Did we avoid unnecessary dependencies?
 * Is the implementation easy to revise later?
 
+## Git Commit Workflow
+
+A Stop hook auto-stages changed files. Main model must NOT compose commit messages.
+
+When you see staged changes or the Stop hook's additionalContext, spawn a Haiku agent:
+
+```
+Agent(subagent_type="haiku", prompt="Write a concise Chinese commit message for the staged changes.
+Run: cd /path && git diff --cached --stat && git diff --cached
+Generate one line (<50 chars) summarizing what changed and why.
+Then: git commit -m \"message\"")
+```
+
+Main model stays focused on code. Haiku handles commits.
+
 ## Default Decision Rule
 
 When uncertain, choose the smaller, more native, more restrained implementation.
