@@ -24,6 +24,11 @@ final class PlayerViewModel {
     var videoTitle: String = ""
     var isShowingFilePicker = false
 
+    var volume: Double {
+        get { Double(engine.volume) }
+        set { engine.volume = Float(newValue) }
+    }
+
     var isHovering = false {
         didSet { handleHoverChange() }
     }
@@ -200,10 +205,28 @@ final class PlayerViewModel {
 
     private func handleHoverChange() {
         if isHovering {
-            isControlsVisible = true
-            autoHideTask?.cancel()
-        } else {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isControlsVisible = true
+            }
             scheduleAutoHide()
+        } else {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isControlsVisible = false
+            }
+            autoHideTask?.cancel()
+        }
+    }
+
+    func handleVideoTap() {
+        togglePlayPause()
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isControlsVisible.toggle()
+        }
+        
+        if isControlsVisible {
+            scheduleAutoHide()
+        } else {
+            autoHideTask?.cancel()
         }
     }
 

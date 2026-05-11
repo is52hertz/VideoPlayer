@@ -13,11 +13,6 @@ struct ContentView: View {
                 loadingView
             case .ready, .playing, .paused, .finished:
                 PlayerView()
-                    .onTapGesture {
-                        withAnimation {
-                            viewModel.isControlsVisible.toggle()
-                        }
-                    }
             case .error(let message):
                 errorView(message)
             }

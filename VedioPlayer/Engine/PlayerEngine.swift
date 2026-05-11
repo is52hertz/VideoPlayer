@@ -4,6 +4,7 @@ protocol PlayerEngine: AnyObject {
     var currentTime: TimeInterval { get }
     var duration: TimeInterval? { get }
     var isPlaying: Bool { get }
+    var volume: Float { get set }
 
     var onTimeUpdate: ((TimeInterval) -> Void)? { get set }
     var onDurationAvailable: ((TimeInterval) -> Void)? { get set }

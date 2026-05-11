@@ -21,6 +21,11 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
 
     var isPlaying: Bool { player.rate != 0 }
 
+    var volume: Float {
+        get { player.volume }
+        set { player.volume = newValue }
+    }
+
     var onTimeUpdate: ((TimeInterval) -> Void)?
     var onDurationAvailable: ((TimeInterval) -> Void)?
     var onPlaybackEnded: (() -> Void)?
