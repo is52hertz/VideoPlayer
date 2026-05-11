@@ -12,6 +12,7 @@ struct VedioPlayerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(viewModel: viewModel)
+                .environment(viewModel)
                 .onOpenURL { url in
                     viewModel.loadVideo(url: url)
                 }
