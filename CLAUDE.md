@@ -149,18 +149,15 @@ Before finishing any task, check:
 
 ## Git Commit Workflow
 
-A Stop hook auto-stages changed files. Main model must NOT compose commit messages.
+A Stop hook (`.claude/hooks/auto-commit.sh`) handles commits automatically.
+Main model must NOT compose commit messages or run git commit.
 
-When you see staged changes or the Stop hook's additionalContext, spawn a Haiku agent:
+Flow:
+1. Stop hook detects changes → stages files → calls `claude -p --model haiku`
+2. Haiku reads staged diff → outputs JSON with Conventional Commit message + summary
+3. Script validates format → git commit
 
-```
-Agent(subagent_type="haiku", prompt="Write a concise Chinese commit message for the staged changes.
-Run: cd /path && git diff --cached --stat && git diff --cached
-Generate one line (<50 chars) summarizing what changed and why.
-Then: git commit -m \"message\"")
-```
-
-Main model stays focused on code. Haiku handles commits.
+Message format: `^(feat|fix|refactor|style|docs|test|chore): .{1,72}$`
 
 ## Default Decision Rule
 
