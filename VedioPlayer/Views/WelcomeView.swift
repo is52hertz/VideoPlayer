@@ -21,17 +21,6 @@ struct WelcomeView: View {
                 ZStack(alignment: .topLeading) {
                     Color.black.opacity(0.4) // Left side darker tint
 
-                    // Custom Close Button
-                    Button(action: {
-                        NSApplication.shared.keyWindow?.close()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.gray.opacity(0.8), .black.opacity(0.3))
-                    }
-                    .buttonStyle(.plain)
-                    .padding(16)
-
                     VStack(spacing: 0) {
                         Spacer()
 
