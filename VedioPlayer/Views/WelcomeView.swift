@@ -175,9 +175,22 @@ struct WelcomeView: View {
 
 private struct WelcomeWindowConfigurator: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async {
-            if let window = view.window {
+        let view = ConfiguratorView()
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private class ConfiguratorView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            NotificationCenter.default.addObserver(self, selector: #selector(configureWindow), name: NSWindow.didBecomeKeyNotification, object: window)
+            configureWindow()
+        }
+
+        @objc private func configureWindow() {
+            DispatchQueue.main.async {
+                guard let window = self.window else { return }
                 window.titleVisibility = .hidden
                 window.titlebarAppearsTransparent = true
                 window.styleMask.insert(.fullSizeContentView)
@@ -187,10 +200,11 @@ private struct WelcomeWindowConfigurator: NSViewRepresentable {
                 window.isMovableByWindowBackground = true
             }
         }
-        return view
+        
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
     }
-
-    func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
 private struct WelcomeActionButton: View {
