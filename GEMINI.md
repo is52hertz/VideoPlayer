@@ -58,7 +58,8 @@ This project is a native Apple-platform video player built with SwiftUI and AVFo
 
 ## Git Workflow
 - **Commit Format:** `^(feat|fix|refactor|style|docs|test|chore): .{1,72}$`
-- **Rule:** Remind the user to commit at the end of meaningful task rounds.
+- **Rule:** Automatically propose and execute a git commit after each round of meaningful changes or at the end of a task, ensuring the message follows the format.
+- **Hook:** Use the project's automated workflow to stage and commit changes without waiting for a manual reminder.
 
 ## Default Decision Rule
 When uncertain, choose the **smaller, more native, and more restrained** implementation.

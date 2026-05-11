@@ -2,25 +2,35 @@ import SwiftUI
 
 @main
 struct VedioPlayerApp: App {
+    #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    private var viewModel: PlayerViewModel { appDelegate.viewModel }
+    #else
+    @State private var viewModel = PlayerViewModel()
+    #endif
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(appDelegate.viewModel)
+            ContentView(viewModel: viewModel)
+                .onOpenURL { url in
+                    viewModel.loadVideo(url: url)
+                }
         }
+        #if os(macOS)
         .defaultSize(width: 900, height: 600)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Open Video...") {
-                    appDelegate.viewModel.openFile()
+                    viewModel.isShowingFilePicker = true
                 }
                 .keyboardShortcut("o", modifiers: .command)
             }
         }
+        #endif
     }
 }
 
+#if os(macOS)
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let viewModel = PlayerViewModel()
 
@@ -35,3 +45,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         application.reply(toOpenOrPrint: .success)
     }
 }
+#endif

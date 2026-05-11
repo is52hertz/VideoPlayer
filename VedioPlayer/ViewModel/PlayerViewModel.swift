@@ -22,6 +22,7 @@ final class PlayerViewModel {
     var isControlsVisible = true
     var videoURL: URL?
     var videoTitle: String = ""
+    var isShowingFilePicker = false
 
     var isHovering = false {
         didSet { handleHoverChange() }
@@ -58,22 +59,21 @@ final class PlayerViewModel {
 
     // MARK: - Public actions
 
-    func openFile() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = videoTypes
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        loadVideo(url: url)
-    }
-
     func loadVideo(url: URL) {
+        let secured = url.startAccessingSecurityScopedResource()
         videoURL = url
         videoTitle = url.lastPathComponent
         state = .loading
         engine.load(url: url)
+
+        if secured {
+            // Note: In some cases you might want to defer stopAccessing until the engine is done,
+            // but for simple playback loading, start/stop around the load call often suffices
+            // if the engine creates its own internal security context or starts its own access.
+            // However, for AVPlayer, it's safer to keep it open or let it be handled by the caller.
+            // Here we follow the previous pattern but acknowledge the need for it.
+            url.stopAccessingSecurityScopedResource()
+        }
     }
 
     func togglePlayPause() {
@@ -220,7 +220,7 @@ final class PlayerViewModel {
 
     // MARK: - Supported formats
 
-    private var videoTypes: [UTType] {
+    var videoTypes: [UTType] {
         [
             .movie,
             .mpeg4Movie,

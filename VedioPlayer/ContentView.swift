@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    @Environment(PlayerViewModel.self) private var viewModel
+    @Bindable var viewModel: PlayerViewModel
 
     var body: some View {
         ZStack {
@@ -13,12 +13,28 @@ struct ContentView: View {
                 loadingView
             case .ready, .playing, .paused, .finished:
                 PlayerView()
+                    .onTapGesture {
+                        withAnimation {
+                            viewModel.isControlsVisible.toggle()
+                        }
+                    }
             case .error(let message):
                 errorView(message)
             }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
+        }
+        .fileImporter(
+            isPresented: $viewModel.isShowingFilePicker,
+            allowedContentTypes: viewModel.videoTypes
+        ) { result in
+            switch result {
+            case .success(let url):
+                viewModel.loadVideo(url: url)
+            case .failure(let error):
+                print("Error picking file: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -32,7 +48,7 @@ struct ContentView: View {
             Text("Supported formats: MP4, MOV, M4V, MKV, AVI, and more")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-            GlassButton(systemName: "folder", action: { viewModel.openFile() })
+            GlassButton(systemName: "folder", action: { viewModel.isShowingFilePicker = true })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
