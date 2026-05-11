@@ -5,20 +5,43 @@ struct PlayerView: View {
     @Environment(PlayerViewModel.self) private var viewModel
 
     var body: some View {
-        ZStack {
-            VideoSurfaceView(engine: viewModel.engine)
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                VideoSurfaceView(engine: viewModel.engine)
+                    .ignoresSafeArea()
 
-            if viewModel.isControlsVisible {
+                // Invisible hit-target: bottom quarter only
+                // Must be below the controls overlay so controls receive mouse events first
+                VStack {
+                    Spacer()
+                    Color.clear
+                        .frame(height: geometry.size.height / 4)
+                        .contentShape(Rectangle())
+                        .onHover { hovering in
+                            viewModel.isHovering = hovering
+                        }
+                }
+
+                // Controls overlay — always in hierarchy, opacity fades
                 controlsOverlay
-                    .transition(.opacity)
+                    .opacity(viewModel.isControlsVisible ? 1 : 0)
+                    .allowsHitTesting(viewModel.isControlsVisible)
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.isControlsVisible)
             }
         }
-        .onHover { hovering in
-            viewModel.isHovering = hovering
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(.space) {
+            viewModel.togglePlayPause()
+            return .handled
         }
-        .onKeyPress { press in
-            viewModel.handleKeyPress(press)
+        .onKeyPress(.leftArrow) {
+            viewModel.seekBackward(10)
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            viewModel.seekForward(10)
+            return .handled
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
