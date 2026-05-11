@@ -125,27 +125,31 @@ final class PlayerViewModel {
     func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
 
-        // Try the file URL identifier first
         if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { [weak self] data, _ in
-                guard let self,
-                      let data = data as? Data,
-                      let path = String(data: data, encoding: .utf8),
-                      let url = URL(string: path)
-                else { return }
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { [weak self] item, _ in
+                guard let self else { return }
+                let url: URL?
+                if let urlItem = item as? URL {
+                    url = urlItem
+                } else if let data = item as? Data,
+                          let path = String(data: data, encoding: .utf8) {
+                    url = URL(fileURLWithPath: path.trimmingCharacters(in: .whitespacesAndNewlines))
+                } else {
+                    url = nil
+                }
+                guard let resolvedURL = url else { return }
                 DispatchQueue.main.async {
-                    self.loadVideo(url: url)
+                    self.loadVideo(url: resolvedURL)
                 }
             }
             return true
         }
 
-        // Fallback: try loading as a URL directly
         let movieIdentifiers = videoTypes.map { $0.identifier }
         for identifier in movieIdentifiers {
             if provider.hasItemConformingToTypeIdentifier(identifier) {
-                provider.loadItem(forTypeIdentifier: identifier, options: nil) { [weak self] url, _ in
-                    guard let self, let url = url as? URL else { return }
+                provider.loadItem(forTypeIdentifier: identifier, options: nil) { [weak self] item, _ in
+                    guard let self, let url = item as? URL else { return }
                     DispatchQueue.main.async {
                         self.loadVideo(url: url)
                     }

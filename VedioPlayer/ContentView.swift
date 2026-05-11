@@ -1,18 +1,24 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @Environment(PlayerViewModel.self) private var viewModel
 
     var body: some View {
-        switch viewModel.state {
-        case .idle:
-            idleView
-        case .loading:
-            loadingView
-        case .ready, .playing, .paused, .finished:
-            PlayerView()
-        case .error(let message):
-            errorView(message)
+        ZStack {
+            switch viewModel.state {
+            case .idle:
+                idleView
+            case .loading:
+                loadingView
+            case .ready, .playing, .paused, .finished:
+                PlayerView()
+            case .error(let message):
+                errorView(message)
+            }
+        }
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            viewModel.handleDrop(providers: providers)
         }
     }
 
