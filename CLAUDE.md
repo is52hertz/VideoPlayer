@@ -149,13 +149,7 @@ Before finishing any task, check:
 
 ## Git Commit Workflow
 
-A Stop hook (`.claude/hooks/auto-commit.sh`) handles commits automatically.
-Main model must NOT compose commit messages or run git commit.
-
-Flow:
-1. Stop hook detects changes → stages files → calls `claude -p --model haiku`
-2. Haiku reads staged diff → outputs JSON with Conventional Commit message + summary
-3. Script validates format → git commit
+At the end of each conversation round, if there are uncommitted changes, remind the user to commit manually.
 
 Message format: `^(feat|fix|refactor|style|docs|test|chore): .{1,72}$`
 

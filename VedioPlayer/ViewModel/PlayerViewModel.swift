@@ -41,7 +41,11 @@ final class PlayerViewModel {
             self?.currentTime = time
         }
         engine.onDurationAvailable = { [weak self] duration in
-            self?.duration = duration
+            guard let self else { return }
+            self.duration = duration
+            if self.state == .loading {
+                self.state = .ready
+            }
         }
         engine.onPlaybackEnded = { [weak self] in
             self?.state = .finished
@@ -66,17 +70,10 @@ final class PlayerViewModel {
     }
 
     func loadVideo(url: URL) {
-        let secured = url.startAccessingSecurityScopedResource()
         videoURL = url
         videoTitle = url.lastPathComponent
         state = .loading
-
         engine.load(url: url)
-        state = .ready
-
-        if secured {
-            url.stopAccessingSecurityScopedResource()
-        }
     }
 
     func togglePlayPause() {
@@ -128,16 +125,27 @@ final class PlayerViewModel {
         if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
             provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { [weak self] item, _ in
                 guard let self else { return }
-                let url: URL?
-                if let urlItem = item as? URL {
-                    url = urlItem
-                } else if let data = item as? Data,
-                          let path = String(data: data, encoding: .utf8) {
-                    url = URL(fileURLWithPath: path.trimmingCharacters(in: .whitespacesAndNewlines))
-                } else {
-                    url = nil
-                }
-                guard let resolvedURL = url else { return }
+                let resolvedURL: URL? = {
+                    if let urlItem = item as? URL {
+                        // Convert file-reference URLs to path URLs
+                        let pathURL = (urlItem as NSURL).filePathURL ?? urlItem
+                        return pathURL.standardizedFileURL.resolvingSymlinksInPath()
+                    }
+                    if let data = item as? Data {
+                        if let url = URL(dataRepresentation: data, relativeTo: nil) {
+                            return url.standardizedFileURL.resolvingSymlinksInPath()
+                        }
+                        if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                            if path.hasPrefix("file://") {
+                                return URL(string: path)?.standardizedFileURL.resolvingSymlinksInPath()
+                            } else {
+                                return URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+                            }
+                        }
+                    }
+                    return nil
+                }()
+                guard let resolvedURL = resolvedURL else { return }
                 DispatchQueue.main.async {
                     self.loadVideo(url: resolvedURL)
                 }
@@ -149,9 +157,20 @@ final class PlayerViewModel {
         for identifier in movieIdentifiers {
             if provider.hasItemConformingToTypeIdentifier(identifier) {
                 provider.loadItem(forTypeIdentifier: identifier, options: nil) { [weak self] item, _ in
-                    guard let self, let url = item as? URL else { return }
+                    guard let self else { return }
+                    let resolvedURL: URL? = {
+                        if let urlItem = item as? URL {
+                            let pathURL = (urlItem as NSURL).filePathURL ?? urlItem
+                            return pathURL.standardizedFileURL.resolvingSymlinksInPath()
+                        }
+                        if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
+                            return url.standardizedFileURL.resolvingSymlinksInPath()
+                        }
+                        return nil
+                    }()
+                    guard let finalURL = resolvedURL else { return }
                     DispatchQueue.main.async {
-                        self.loadVideo(url: url)
+                        self.loadVideo(url: finalURL)
                     }
                 }
                 return true
