@@ -167,19 +167,28 @@ struct WelcomeView: View {
                 print("Error picking file: \(error.localizedDescription)")
             }
         }
-        // Hide standard window title bar
-        .onAppear {
-            if let window = NSApplication.shared.windows.first(where: { $0.isKeyWindow }) {
+        .background(WelcomeWindowConfigurator())
+    }
+}
+
+private struct WelcomeWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            if let window = view.window {
                 window.titleVisibility = .hidden
                 window.titlebarAppearsTransparent = true
+                window.styleMask.insert(.fullSizeContentView)
                 window.standardWindowButton(.closeButton)?.isHidden = true
                 window.standardWindowButton(.miniaturizeButton)?.isHidden = true
                 window.standardWindowButton(.zoomButton)?.isHidden = true
-                window.styleMask.insert(.fullSizeContentView)
-                window.isMovableByWindowBackground = true // Allow dragging by the background
+                window.isMovableByWindowBackground = true
             }
         }
+        return view
     }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
 private struct WelcomeActionButton: View {
