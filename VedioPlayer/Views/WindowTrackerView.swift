@@ -66,6 +66,11 @@ struct WindowTrackerView: NSViewRepresentable {
         func updateTitleBar(for window: NSWindow?, isVisible: Bool) {
             guard let window = window else { return }
             
+            // Re-enable window resizing (in case it was disabled by Welcome Screen)
+            if !window.styleMask.contains(.resizable) {
+                window.styleMask.insert(.resizable)
+            }
+            
             // Ensure full size content view so content is under the title bar
             if !window.styleMask.contains(.fullSizeContentView) {
                 window.styleMask.insert(.fullSizeContentView)

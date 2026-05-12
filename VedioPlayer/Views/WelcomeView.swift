@@ -236,6 +236,7 @@ private struct WelcomeVisualEffectBackground: NSViewRepresentable {
             if let window = view.window {
                 window.backgroundColor = .clear
                 window.isOpaque = false
+                window.styleMask.remove(.resizable) // Disable resizing for Welcome Screen
             }
         }
 
