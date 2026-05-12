@@ -11,17 +11,25 @@ struct VedioPlayerApp: App {
     #endif
 
     var body: some Scene {
-        WindowGroup {
+        #if os(macOS)
+        Window("Welcome", id: "welcome") {
+            WelcomeView()
+                .environment(viewModel)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .modelContainer(for: RecentVideo.self)
+
+        WindowGroup(id: "player") {
             ContentView(viewModel: viewModel)
                 .environment(viewModel)
-                .onOpenURL { url in
-                    viewModel.loadVideo(url: url)
+                .onReceive(NotificationCenter.default.publisher(for: .init("VideoLoadedNotification"))) { _ in
+                    // In case we need to bring the player window to front, though openWindow handles this
                 }
         }
-        .modelContainer(for: RecentVideo.self)
-        #if os(macOS)
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 900, height: 600)
+        .modelContainer(for: RecentVideo.self)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Open Video...") {
@@ -30,6 +38,15 @@ struct VedioPlayerApp: App {
                 .keyboardShortcut("o", modifiers: .command)
             }
         }
+        #else
+        WindowGroup {
+            ContentView(viewModel: viewModel)
+                .environment(viewModel)
+                .onOpenURL { url in
+                    viewModel.loadVideo(url: url)
+                }
+        }
+        .modelContainer(for: RecentVideo.self)
         #endif
     }
 }

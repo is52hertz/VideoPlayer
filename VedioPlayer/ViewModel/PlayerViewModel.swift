@@ -71,6 +71,8 @@ final class PlayerViewModel {
         state = .loading
         engine.load(url: url)
 
+        NotificationCenter.default.post(name: .init("VideoLoadedNotification"), object: nil)
+
         if secured {
             // Note: In some cases you might want to defer stopAccessing until the engine is done,
             // but for simple playback loading, start/stop around the load call often suffices

@@ -54,9 +54,6 @@ struct ContentView: View {
 
     @ViewBuilder
     private var idleView: some View {
-        #if os(macOS)
-        WelcomeView()
-        #else
         VStack(spacing: 24) {
             Image(systemName: "play.rectangle")
                 .font(.system(size: 48))
@@ -69,7 +66,6 @@ struct ContentView: View {
             GlassButton(systemName: "folder", action: { viewModel.isShowingFilePicker = true })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        #endif
     }
 
     private var loadingView: some View {

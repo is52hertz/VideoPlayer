@@ -8,6 +8,8 @@ import AppKit
 struct WelcomeView: View {
     @Environment(PlayerViewModel.self) private var viewModel
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @Query(sort: \RecentVideo.lastOpened, order: .reverse) private var recentVideos: [RecentVideo]
 
     private let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "VedioPlayer"
@@ -25,33 +27,10 @@ struct WelcomeView: View {
                         Spacer()
 
                         // App Icon area
-                        ZStack {
-                            // Soft radial glow
-                            RadialGradient(
-                                gradient: Gradient(colors: [Color.white.opacity(0.15), Color.clear]),
-                                center: .center,
-                                startRadius: 40,
-                                endRadius: 160
-                            )
-                            .frame(width: 320, height: 320)
-
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color(red: 0.2, green: 0.3, blue: 0.5), Color(red: 0.1, green: 0.15, blue: 0.3)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .frame(width: 128, height: 128)
-                                .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
-                            
-                            Image(systemName: "play.square.fill")
-                                .font(.system(size: 64))
-                                .foregroundStyle(.white)
-                        }
-                        .frame(width: 128, height: 128)
-                        .padding(.bottom, 24)
+                        WelcomeAppIcon()
+                            .welcomeAppIconGlow()
+                            .frame(width: 130, height: 130)
+                            .padding(.bottom, 24)
 
                         Text(appName)
                             .font(.system(size: 32, weight: .bold))
@@ -127,12 +106,8 @@ struct WelcomeView: View {
             .ignoresSafeArea()
             .preferredColorScheme(.dark)
         }
-        .frame(minWidth: 800, minHeight: 500)
-        .background(
-            WelcomeVisualEffectBackground()
-                .ignoresSafeArea()
-        )
-        .ignoresSafeArea()
+        .frame(width: 802, height: 470)
+        .background(Material.ultraThin)
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
@@ -149,6 +124,10 @@ struct WelcomeView: View {
                 print("Error picking file: \(error.localizedDescription)")
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .init("VideoLoadedNotification"))) { _ in
+            openWindow(id: "player")
+            dismissWindow(id: "welcome")
+        }
     }
 }
 
@@ -156,8 +135,6 @@ private struct WelcomeActionButton: View {
     let icon: String
     let title: String
     let action: () -> Void
-    
-    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
@@ -171,78 +148,48 @@ private struct WelcomeActionButton: View {
                 
                 Spacer()
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(isHovered ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
+        .buttonStyle(WelcomeActionButtonStyle())
     }
 }
 
 private struct RecentVideoRow: View {
     let video: RecentVideo
     let action: () -> Void
-    
-    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: "doc.richtext.fill")
-                    .font(.title2)
-                    .foregroundStyle(isHovered ? .white : .blue)
-                    .frame(width: 40, height: 40)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(video.title)
-                        .font(.headline)
-                        .foregroundStyle(isHovered ? .white : .primary)
-                        .lineLimit(1)
-                    
-                    Text(video.url.path)
-                        .font(.caption)
-                        .foregroundStyle(isHovered ? .white.opacity(0.8) : .secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                Spacer()
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .background(isHovered ? Color.accentColor : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .contentShape(Rectangle())
+            RecentVideoRowContent(video: video)
         }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
+        .buttonStyle(RecentVideoRowStyle())
     }
 }
 
-private struct WelcomeVisualEffectBackground: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.blendingMode = .behindWindow // Crucial for blurring the desktop
-        view.state = .active
-        view.material = .underWindowBackground // Deep, frosted look
+private struct RecentVideoRowContent: View {
+    let video: RecentVideo
+    @Environment(\.isHovered) private var isHovered
 
-        DispatchQueue.main.async {
-            if let window = view.window {
-                window.backgroundColor = .clear
-                window.isOpaque = false
-                window.styleMask.remove(.resizable) // Disable resizing for Welcome Screen
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "doc.richtext.fill")
+                .font(.title2)
+                .foregroundStyle(isHovered ? .white : .blue)
+                .frame(width: 40, height: 40)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(video.title)
+                    .font(.headline)
+                    .foregroundStyle(isHovered ? .white : .primary)
+                    .lineLimit(1)
+                
+                Text(video.url.path)
+                    .font(.caption)
+                    .foregroundStyle(isHovered ? .white.opacity(0.8) : .secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
+            Spacer()
         }
-
-        return view
     }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 #endif
