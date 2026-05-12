@@ -20,11 +20,11 @@ struct VedioPlayerApp: App {
         .windowResizability(.contentSize)
         .modelContainer(for: RecentVideo.self)
 
-        WindowGroup(id: "player") {
+        Window("VedioPlayer", id: "player") {
             ContentView(viewModel: viewModel)
                 .environment(viewModel)
                 .onReceive(NotificationCenter.default.publisher(for: .init("VideoLoadedNotification"))) { _ in
-                    // In case we need to bring the player window to front, though openWindow handles this
+                    // Bring the player window to front when a video is loaded (e.g., from Finder or Welcome screen)
                 }
         }
         .windowStyle(.hiddenTitleBar)
