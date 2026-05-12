@@ -26,6 +26,15 @@ struct WelcomeView: View {
 
                         // App Icon area
                         ZStack {
+                            // Soft radial glow
+                            RadialGradient(
+                                gradient: Gradient(colors: [Color.white.opacity(0.15), Color.clear]),
+                                center: .center,
+                                startRadius: 40,
+                                endRadius: 160
+                            )
+                            .frame(width: 320, height: 320)
+
                             RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .fill(
                                     LinearGradient(
@@ -41,6 +50,7 @@ struct WelcomeView: View {
                                 .font(.system(size: 64))
                                 .foregroundStyle(.white)
                         }
+                        .frame(width: 128, height: 128)
                         .padding(.bottom, 24)
 
                         Text(appName)
@@ -80,9 +90,9 @@ struct WelcomeView: View {
                         Spacer()
                     }
                 }
-                .frame(width: geometry.size.width * 0.75)
+                .frame(width: geometry.size.width * 0.62)
                 
-                // Right Pane: Recent Files (25%)
+                // Right Pane: Recent Files (38%)
                 ZStack {
                     Color.white.opacity(0.05) // Right side lighter tint
 
@@ -102,32 +112,9 @@ struct WelcomeView: View {
                         } else {
                             List {
                                 ForEach(recentVideos) { video in
-                                    Button(action: {
+                                    RecentVideoRow(video: video) {
                                         viewModel.loadVideo(url: video.url)
-                                    }) {
-                                        HStack(spacing: 12) {
-                                            Image(systemName: "doc.richtext.fill")
-                                                .font(.title2)
-                                                .foregroundStyle(.blue)
-                                                .frame(width: 40, height: 40)
-                                            
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(video.title)
-                                                    .font(.headline)
-                                                    .lineLimit(1)
-                                                
-                                                Text(video.url.path)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                                    .lineLimit(1)
-                                                    .truncationMode(.middle)
-                                            }
-                                            Spacer()
-                                        }
-                                        .padding(.vertical, 4)
-                                        .contentShape(Rectangle())
                                     }
-                                    .buttonStyle(.plain)
                                 }
                             }
                             .scrollContentBackground(.hidden)
@@ -135,12 +122,16 @@ struct WelcomeView: View {
                         }
                     }
                 }
-                .frame(width: geometry.size.width * 0.25)
+                .frame(width: geometry.size.width * 0.38)
             }
             .ignoresSafeArea()
+            .preferredColorScheme(.dark)
         }
         .frame(minWidth: 800, minHeight: 500)
-        .background(.ultraThinMaterial)
+        .background(
+            WelcomeVisualEffectBackground()
+                .ignoresSafeArea()
+        )
         .ignoresSafeArea()
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
@@ -191,5 +182,66 @@ private struct WelcomeActionButton: View {
             isHovered = hovering
         }
     }
+}
+
+private struct RecentVideoRow: View {
+    let video: RecentVideo
+    let action: () -> Void
+    
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.richtext.fill")
+                    .font(.title2)
+                    .foregroundStyle(isHovered ? .white : .blue)
+                    .frame(width: 40, height: 40)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(video.title)
+                        .font(.headline)
+                        .foregroundStyle(isHovered ? .white : .primary)
+                        .lineLimit(1)
+                    
+                    Text(video.url.path)
+                        .font(.caption)
+                        .foregroundStyle(isHovered ? .white.opacity(0.8) : .secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(isHovered ? Color.accentColor : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+private struct WelcomeVisualEffectBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.blendingMode = .behindWindow // Crucial for blurring the desktop
+        view.state = .active
+        view.material = .underWindowBackground // Deep, frosted look
+
+        DispatchQueue.main.async {
+            if let window = view.window {
+                window.backgroundColor = .clear
+                window.isOpaque = false
+            }
+        }
+
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 #endif
