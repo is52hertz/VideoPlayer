@@ -22,6 +22,7 @@ This project is a native Apple-platform video player built with SwiftUI and AVFo
 ### 2. Design System (Liquid Glass)
 - **Core Aesthetic:** Strictly follow Apple HIG while implementing a "Liquid Glass" (液态玻璃) style. This means using dynamic, fluid transparency and organic blur effects that feel native yet modern.
 - **Primary Surface:** Video content is the focus. Controls appear only when needed, emerging from the liquid background.
+- **Separation of Concerns:** The Welcome interface and the Video Player interface MUST maintain separated style definitions. Do not couple them tightly. If they share a similar appearance, use copied/separated style configurations to ensure robustness if they diverge in the future.
 - **Centralized Styling:** Reusable UI primitives (`GlassPanel`, `GlassButton`, `GlassSlider`) own the visual treatment.
 - **No Scattered Modifiers:** Avoid repeating complex material and shadow modifiers in feature views; keep all "liquid" effects centralized.
 

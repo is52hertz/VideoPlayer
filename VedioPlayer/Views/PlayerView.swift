@@ -5,6 +5,7 @@ struct PlayerView: View {
     @Environment(PlayerViewModel.self) private var viewModel
     @State private var controlOffset: CGSize = .zero
     @State private var dragStartOffset: CGSize = .zero
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         @Bindable var viewModel = viewModel
@@ -14,6 +15,7 @@ struct PlayerView: View {
                 WindowTrackerView(isVisible: Binding(get: { viewModel.isControlsVisible }, set: { _ in }), onHover: { hovering in
                     viewModel.isHovering = hovering
                 })
+                .ignoresSafeArea()
                 #endif
 
                 VideoSurfaceView(engine: viewModel.engine)
@@ -32,7 +34,11 @@ struct PlayerView: View {
             }
         }
         .focusable()
+        .focused($isFocused)
         .focusEffectDisabled()
+        .onAppear {
+            isFocused = true
+        }
         .onKeyPress(.space) {
             viewModel.togglePlayPause()
             return .handled
@@ -79,18 +85,21 @@ struct PlayerView: View {
                             Button { viewModel.seekBackward(15) } label: {
                                 Image(systemName: "backward.fill")
                                     .font(.system(size: 18))
+                                    .frame(width: 24, height: 24)
                             }
                             .buttonStyle(.plain)
 
                             Button { viewModel.togglePlayPause() } label: {
                                 Image(systemName: playPauseIcon)
                                     .font(.system(size: 32))
+                                    .frame(width: 32, height: 32)
                             }
                             .buttonStyle(.plain)
 
                             Button { viewModel.seekForward(15) } label: {
                                 Image(systemName: "forward.fill")
                                     .font(.system(size: 18))
+                                    .frame(width: 24, height: 24)
                             }
                             .buttonStyle(.plain)
                         }
