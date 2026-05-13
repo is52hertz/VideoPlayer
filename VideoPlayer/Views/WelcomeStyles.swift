@@ -33,7 +33,8 @@ enum WelcomeLayout {
     static let appIconGlowSize: CGFloat = 320
     static let appIconGlowStartRadius: CGFloat = 40
     static let appIconGlowEndRadius: CGFloat = 160
-    static let appIconGlowOpacity: Double = 0.15
+    static let appIconGlowOpacity: Double = 0.35
+    static let appIconGlowBlurRadius: CGFloat = 50
 
     // Title / version block
     static let appNameFontSize: CGFloat = 36
@@ -68,7 +69,7 @@ enum WelcomeLayout {
     //           inherits the welcome chrome's forced `.dark` color scheme.
     //           Keep it semantic; do not hardcode a color here.
     static let closeButtonIconSize: CGFloat = 14
-    static let closeButtonPadding: CGFloat = 10
+    static let closeButtonPadding: CGFloat = 15
     static let closeButtonFadeDuration: Double = 0.2
 }
 
@@ -97,17 +98,50 @@ final class SystemAppearanceTracker {
     }
 }
 
-/// A reusable background modifier for the Welcome Screen's app icon to provide a soft radial glow.
+/// A reusable background modifier for the Welcome Screen's app icon that
+/// paints a soft iridescent halo behind it — similar to the multi-color glow
+/// used on the Pixelmator Pro welcome screen.
+///
+/// Implementation: an `AngularGradient` (closed rainbow loop) is heavily
+/// blurred, then masked by a `RadialGradient` so the color only blooms in a
+/// ring around the icon and fades cleanly to transparent at the edges.
 struct WelcomeAppIconGlow: ViewModifier {
+    /// Iridescent palette. First and last colors match so the angular gradient
+    /// closes seamlessly without a visible seam.
+    private let glowColors: [Color] = [
+        Color(red: 1.00, green: 0.45, blue: 0.55),
+        Color(red: 0.85, green: 0.40, blue: 0.95),
+        Color(red: 0.45, green: 0.55, blue: 1.00),
+        Color(red: 0.35, green: 0.85, blue: 0.95),
+        Color(red: 0.55, green: 0.90, blue: 0.55),
+        Color(red: 1.00, green: 0.85, blue: 0.35),
+        Color(red: 1.00, green: 0.55, blue: 0.30),
+        Color(red: 1.00, green: 0.40, blue: 0.45),
+        Color(red: 1.00, green: 0.45, blue: 0.55)
+    ]
+
     func body(content: Content) -> some View {
         ZStack {
-            RadialGradient(
-                gradient: Gradient(colors: [Color.white.opacity(WelcomeLayout.appIconGlowOpacity), Color.clear]),
-                center: .center,
-                startRadius: WelcomeLayout.appIconGlowStartRadius,
-                endRadius: WelcomeLayout.appIconGlowEndRadius
+            AngularGradient(
+                gradient: Gradient(colors: glowColors),
+                center: .center
             )
-            .frame(width: WelcomeLayout.appIconGlowSize, height: WelcomeLayout.appIconGlowSize)
+            .frame(width: WelcomeLayout.appIconGlowSize,
+                   height: WelcomeLayout.appIconGlowSize)
+            .blur(radius: WelcomeLayout.appIconGlowBlurRadius)
+            .mask(
+                RadialGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .white, location: 0.0),
+                        .init(color: .white, location: 0.45),
+                        .init(color: .clear, location: 1.0)
+                    ]),
+                    center: .center,
+                    startRadius: WelcomeLayout.appIconGlowStartRadius,
+                    endRadius: WelcomeLayout.appIconGlowEndRadius
+                )
+            )
+            .opacity(WelcomeLayout.appIconGlowOpacity)
 
             content
         }
