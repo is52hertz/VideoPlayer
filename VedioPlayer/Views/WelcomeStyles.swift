@@ -19,24 +19,13 @@ struct WelcomeAppIconGlow: ViewModifier {
     }
 }
 
-/// A reusable view representing the stylized App Icon for the Welcome Screen.
+/// A reusable view representing the App Icon for the Welcome Screen.
 struct WelcomeAppIcon: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [Color(red: 0.2, green: 0.3, blue: 0.5), Color(red: 0.1, green: 0.15, blue: 0.3)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .frame(width: 128, height: 128)
+        Image(nsImage: NSApplication.shared.applicationIconImage)
+            .resizable()
+            .scaledToFit()
             .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
-            .overlay {
-                Image(systemName: "play.square.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.white)
-            }
     }
 }
 
