@@ -58,6 +58,7 @@ enum WelcomeLayout {
     static let recentRowHoverTintOpacity: Double = 0.15
     static let recentRowContentSpacing: CGFloat = 12
     static let recentRowIconFrameSize: CGFloat = 40
+    static let recentRowThumbnailCornerRadius: CGFloat = 6
     static let recentRowTextSpacing: CGFloat = 2
 
     // Close button (Pixelmator-style)

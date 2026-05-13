@@ -212,11 +212,12 @@ private struct RecentVideoRowContent: View {
 
     var body: some View {
         HStack(spacing: WelcomeLayout.recentRowContentSpacing) {
-            Image(systemName: "doc.richtext.fill")
-                .font(.title2)
-                .foregroundStyle(isHovered ? .white : .blue)
-                .frame(width: WelcomeLayout.recentRowIconFrameSize,
-                       height: WelcomeLayout.recentRowIconFrameSize)
+            VideoThumbnailView(
+                url: video.url,
+                size: WelcomeLayout.recentRowIconFrameSize,
+                cornerRadius: WelcomeLayout.recentRowThumbnailCornerRadius,
+                isHighlighted: isHovered
+            )
 
             VStack(alignment: .leading, spacing: WelcomeLayout.recentRowTextSpacing) {
                 Text(video.title)
