@@ -19,9 +19,10 @@ struct WelcomeView: View {
         @Bindable var viewModel = viewModel
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                // Left Pane: Info and Actions (75%)
+                // Left Pane: Info and Actions (62%)
                 ZStack(alignment: .topLeading) {
-                    Color.black.opacity(0.4) // Left side darker tint
+                    Rectangle()
+                        .fill(.black.opacity(0.15)) // Subtle dark tint for Liquid Glass
 
                     VStack(spacing: 0) {
                         Spacer()
@@ -73,7 +74,8 @@ struct WelcomeView: View {
                 
                 // Right Pane: Recent Files (38%)
                 ZStack {
-                    Color.white.opacity(0.05) // Right side lighter tint
+                    Rectangle()
+                        .fill(.white.opacity(0.02)) // Subtle light tint for Liquid Glass
 
                     VStack(alignment: .leading, spacing: 0) {
                         if recentVideos.isEmpty {
@@ -107,7 +109,7 @@ struct WelcomeView: View {
             .preferredColorScheme(.dark)
         }
         .frame(width: 802, height: 470)
-        .background(Material.ultraThin)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)

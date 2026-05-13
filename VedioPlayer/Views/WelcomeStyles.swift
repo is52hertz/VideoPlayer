@@ -54,8 +54,11 @@ struct WelcomeActionButtonStyle: ButtonStyle {
         configuration.label
             .padding(.horizontal, 16)
             .frame(width: 350, height: 38)
-            .background(isHovered ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.06))
+                    .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            )
             .contentShape(Rectangle())
             .onHover { hovering in
                 isHovered = hovering
@@ -71,9 +74,15 @@ struct RecentVideoRowStyle: ButtonStyle {
         configuration.label
             .padding(.vertical, 6)
             .padding(.horizontal, 10)
-            .background(isHovered ? Color.accentColor : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .contentShape(Rectangle())
+            .background(
+                ZStack {
+                    if isHovered {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.accentColor.opacity(0.2))
+                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                }
+            )
             .onHover { hovering in
                 isHovered = hovering
             }
