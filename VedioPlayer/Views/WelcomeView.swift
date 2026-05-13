@@ -31,7 +31,6 @@ struct WelcomeView: View {
                         // App Icon area
                         WelcomeAppIcon()
                             .welcomeAppIconGlow()
-                            .frame(width: 120, height: 120)
                             .padding(.bottom, 18)
 
                         Text(appName)
