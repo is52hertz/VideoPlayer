@@ -105,13 +105,13 @@ struct WelcomeView: View {
                 }
                 .frame(width: geometry.size.width * 0.38)
             }
-            .ignoresSafeArea()
             .environment(\.colorScheme, .dark)
         }
         .frame(width: 802, height: 470)
+        .ignoresSafeArea()
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
                 .allowsHitTesting(false)
         )
         .windowVibrancy()
