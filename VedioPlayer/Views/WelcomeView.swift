@@ -128,7 +128,8 @@ struct WelcomeView: View {
                 .allowsHitTesting(false)
         )
         .windowVibrancy(contentSize: NSSize(width: WelcomeLayout.windowWidth,
-                                            height: WelcomeLayout.windowHeight))
+                                            height: WelcomeLayout.windowHeight),
+                        cornerRadius: WelcomeLayout.windowCornerRadius)
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)

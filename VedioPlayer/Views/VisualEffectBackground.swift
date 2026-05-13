@@ -27,6 +27,7 @@ struct VisualEffectBackground: NSViewRepresentable {
 /// completely, giving a borderless window appearance.
 private struct WindowVibrancyConfigurator: NSViewRepresentable {
     let contentSize: NSSize
+    let cornerRadius: CGFloat
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
@@ -49,22 +50,35 @@ private struct WindowVibrancyConfigurator: NSViewRepresentable {
             window.center()
             // Allow dragging from anywhere
             window.isMovableByWindowBackground = true
-            // Round the window's content view at the AppKit level
+            // Round the window's content view at the AppKit level so the
+            // actual window shape matches the SwiftUI overlay border.
             window.contentView?.wantsLayer = true
-            window.contentView?.layer?.cornerRadius = 10
+            window.contentView?.layer?.cornerRadius = cornerRadius
             window.contentView?.layer?.masksToBounds = true
         }
         return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let window = nsView.window else { return }
+            window.contentView?.layer?.cornerRadius = cornerRadius
+        }
+    }
 }
 
 extension View {
     /// Configures the window for transparency and pins its content size.
     /// Call once on the root view of a single-window scene.
-    func windowVibrancy(contentSize: NSSize) -> some View {
-        self.background(WindowVibrancyConfigurator(contentSize: contentSize))
+    ///
+    /// - Parameters:
+    ///   - contentSize: Fixed content size for the window (also used as
+    ///     min/max so the window cannot be resized).
+    ///   - cornerRadius: Radius applied to the window's content view layer
+    ///     so the actual window shape matches the SwiftUI overlay stroke.
+    func windowVibrancy(contentSize: NSSize, cornerRadius: CGFloat = 10) -> some View {
+        self.background(WindowVibrancyConfigurator(contentSize: contentSize,
+                                                   cornerRadius: cornerRadius))
     }
 }
 #endif
