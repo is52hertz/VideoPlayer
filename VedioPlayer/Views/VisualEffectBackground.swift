@@ -36,8 +36,9 @@ private struct WindowVibrancyConfigurator: NSViewRepresentable {
             window.backgroundColor = .clear
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
+            window.styleMask.remove(.titled)
             window.styleMask.insert(.fullSizeContentView)
-            // Hide traffic light buttons
+            // Hide traffic light buttons (in case they persist)
             window.standardWindowButton(.closeButton)?.isHidden = true
             window.standardWindowButton(.miniaturizeButton)?.isHidden = true
             window.standardWindowButton(.zoomButton)?.isHidden = true
