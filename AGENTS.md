@@ -43,7 +43,11 @@
 
 ## Build Workflow
 
-- **Build check:** After every round of code changes, run `build_sim`. Do not proceed or commit if the build fails.
+- **Build check:** After every round of code changes, run Key Commands. Do not proceed or commit if the build fails.
+
+### Key Commands
+- **Build:** `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer build`
+- **Test:** `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer test`
 
 ---
 
