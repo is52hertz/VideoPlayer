@@ -30,11 +30,11 @@ enum WelcomeLayout {
     static let appIconShadowRadius: CGFloat = 10
     static let appIconShadowYOffset: CGFloat = 5
     static let appIconShadowOpacity: Double = 0.3
-    static let appIconGlowSize: CGFloat = 320
-    static let appIconGlowStartRadius: CGFloat = 40
-    static let appIconGlowEndRadius: CGFloat = 160
-    static let appIconGlowOpacity: Double = 0.35
-    static let appIconGlowBlurRadius: CGFloat = 50
+    static let appIconGlowSize: CGFloat = 420
+    static let appIconGlowStartRadius: CGFloat = 30
+    static let appIconGlowEndRadius: CGFloat = 210
+    static let appIconGlowOpacity: Double = 0.18
+    static let appIconGlowBlurRadius: CGFloat = 90
 
     // Title / version block
     static let appNameFontSize: CGFloat = 36
@@ -130,11 +130,14 @@ struct WelcomeAppIconGlow: ViewModifier {
                    height: WelcomeLayout.appIconGlowSize)
             .blur(radius: WelcomeLayout.appIconGlowBlurRadius)
             .mask(
+                // Smooth radial fade with no plateau — every stop sits on the
+                // descent so the halo never forms a hard-edged ring.
                 RadialGradient(
                     gradient: Gradient(stops: [
-                        .init(color: .white, location: 0.0),
-                        .init(color: .white, location: 0.45),
-                        .init(color: .clear, location: 1.0)
+                        .init(color: .white.opacity(0.85), location: 0.0),
+                        .init(color: .white.opacity(0.55), location: 0.35),
+                        .init(color: .white.opacity(0.20), location: 0.70),
+                        .init(color: .clear,               location: 1.0)
                     ]),
                     center: .center,
                     startRadius: WelcomeLayout.appIconGlowStartRadius,
