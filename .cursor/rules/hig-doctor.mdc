@@ -1,0 +1,16 @@
+---
+description: Auto-invoke HIG Doctor on any SwiftUI view, layout, material, motion, gesture, or control change
+globs: **/*View.swift,**/*Button.swift,**/*Panel.swift,**/*Slider.swift,**/*Toolbar.swift,**/*Popover.swift,**/Views/**/*.swift,**/Design/**/*.swift,**/Glass/**/*.swift
+alwaysApply: false
+---
+
+# HIG Doctor — Auto Review
+
+When editing any file matched by this rule, **before finalizing the change**:
+
+1. Read `.cursor/skills/hig-doctor/SKILL.md` and follow its review workflow.
+2. Cross-reference the relevant reference doc from the index table (macos / ios_ipados / media-controls / foundations) based on the change's target platform and topic.
+3. Surface any HIG violation as a comment or inline suggestion — do not silently skip.
+
+Scope: layout · materials (Liquid Glass) · motion · gestures · controls · platform adaptation.  
+Skip for: non-UI files, logic-only changes, test files.

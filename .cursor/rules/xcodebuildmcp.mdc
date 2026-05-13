@@ -1,0 +1,18 @@
+---
+description: Use XcodeBuildMCP tools for every build, test, run, debug, and simulator operation in this project
+alwaysApply: true
+---
+
+# XcodeBuildMCP — Required Tooling
+
+For **all** build / test / run / debug / simulator tasks in this Apple platform project:
+
+1. Read `.cursor/skills/xcodebuildmcp/SKILL.md` at the start of any build/run session.
+2. Always call `session_show_defaults` before the first build, run, or test action — never skip.
+3. Use XcodeBuildMCP MCP tools instead of raw shell calls (`xcodebuild`, `xcrun`, `simctl`).
+
+Key commands per AGENTS.md:
+- Build: `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer build`
+- Test:  `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer test`
+
+Do not proceed or commit if the build fails.
