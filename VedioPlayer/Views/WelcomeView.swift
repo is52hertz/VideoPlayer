@@ -108,13 +108,12 @@ struct WelcomeView: View {
             .environment(\.colorScheme, .dark)
         }
         .frame(width: 802, height: 470)
-        .ignoresSafeArea()
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
                 .allowsHitTesting(false)
         )
-        .windowVibrancy()
+        .windowVibrancy(contentSize: NSSize(width: 802, height: 470))
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
