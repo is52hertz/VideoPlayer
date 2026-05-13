@@ -1,6 +1,32 @@
 import SwiftUI
 
 #if os(macOS)
+import AppKit
+
+/// Tracks the **system** appearance (Light vs Dark) independently of any
+/// SwiftUI `colorScheme` overrides upstream. Used by `WelcomeAppIcon` so the
+/// icon follows the OS setting even though `WelcomeView` itself forces a
+/// `.dark` color scheme for its chrome.
+@MainActor
+@Observable
+final class SystemAppearanceTracker {
+    private(set) var isDark: Bool
+
+    @ObservationIgnored private var observation: NSKeyValueObservation?
+
+    init() {
+        self.isDark = Self.computeIsDark()
+        observation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.isDark = Self.computeIsDark()
+            }
+        }
+    }
+
+    private static func computeIsDark() -> Bool {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+}
 
 /// A reusable background modifier for the Welcome Screen's app icon to provide a soft radial glow.
 struct WelcomeAppIconGlow: ViewModifier {
@@ -20,13 +46,26 @@ struct WelcomeAppIconGlow: ViewModifier {
 }
 
 /// A reusable view representing the App Icon for the Welcome Screen.
+///
+/// - Loads the high-resolution PNG from `Assets.xcassets/WelcomeAppIcon.imageset`
+///   (which has Light + Dark appearance variants) rather than
+///   `NSApplication.shared.applicationIconImage`, which the system downsamples
+///   to standard icon sizes and yields a blurry result at 130pt on Retina.
+/// - Pins the asset's color scheme to the **system** appearance, so the icon
+///   keeps tracking Light/Dark mode even when `WelcomeView` forces its chrome
+///   to `.dark`.
 struct WelcomeAppIcon: View {
+    @State private var systemAppearance = SystemAppearanceTracker()
+
     var body: some View {
-        Image(nsImage: NSApplication.shared.applicationIconImage)
+        Image("WelcomeAppIcon")
             .resizable()
+            .interpolation(.high)
             .scaledToFit()
             .frame(width: 130, height: 130)
             .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+            .accessibilityLabel(Text("VedioPlayer app icon"))
+            .environment(\.colorScheme, systemAppearance.isDark ? .dark : .light)
     }
 }
 
