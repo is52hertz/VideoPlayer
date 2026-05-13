@@ -23,7 +23,7 @@ struct WelcomeView: View {
                     // Left Pane: Info and Actions (62%)
                     ZStack {
                         VisualEffectBackground(material: .underWindowBackground)
-                        Color.black.opacity(0.25)
+                        Color.black.opacity(WelcomeLayout.leftPaneTintOpacity)
 
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
@@ -31,19 +31,20 @@ struct WelcomeView: View {
                         // App Icon area
                         WelcomeAppIcon()
                             .welcomeAppIconGlow()
-                            .padding(.bottom, 18)
-                            .frame(width: 120, height: 120)
+                            .padding(.bottom, WelcomeLayout.appIconBottomPadding)
+                            .frame(width: WelcomeLayout.appIconFrameSize,
+                                   height: WelcomeLayout.appIconFrameSize)
 
                         Text(appName)
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: WelcomeLayout.appNameFontSize, weight: .bold))
 
                         Text(appVersion)
                             .font(.callout)
                             .foregroundStyle(.secondary)
-                            .padding(.bottom, 32)
+                            .padding(.bottom, WelcomeLayout.versionBottomPadding)
 
                         // Actions
-                        VStack(spacing: 10) {
+                        VStack(spacing: WelcomeLayout.actionButtonSpacing) {
                             WelcomeActionButton(
                                 icon: "folder",
                                 title: "Open Finder...",
@@ -71,12 +72,12 @@ struct WelcomeView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(width: geometry.size.width * 0.62)
-                
-                // Right Pane: Recent Files (38%)
+                .frame(width: geometry.size.width * WelcomeLayout.leftPaneRatio)
+
+                // Right Pane: Recent Files
                 ZStack {
                     VisualEffectBackground(material: .underWindowBackground)
-                    Color.white.opacity(0.08) // Subtle lighter tint vs left pane
+                    Color.white.opacity(WelcomeLayout.rightPaneTintOpacity) // Subtle lighter tint vs left pane
 
                     VStack(alignment: .leading, spacing: 0) {
                         if recentVideos.isEmpty {
@@ -104,7 +105,7 @@ struct WelcomeView: View {
                         }
                     }
                 }
-                .frame(width: geometry.size.width * 0.38)
+                .frame(width: geometry.size.width * WelcomeLayout.rightPaneRatio)
                 }
 
                 // Custom close button (Pixelmator Pro style)
@@ -112,21 +113,22 @@ struct WelcomeView: View {
                     NSApplication.shared.keyWindow?.close()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: WelcomeLayout.closeButtonIconSize))
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .padding(10)
+                .padding(WelcomeLayout.closeButtonPadding)
             }
             .environment(\.colorScheme, .dark)
         }
-        .frame(width: 802, height: 470)
+        .frame(width: WelcomeLayout.windowWidth, height: WelcomeLayout.windowHeight)
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: WelcomeLayout.windowCornerRadius, style: .continuous)
+                .strokeBorder(Color.white.opacity(WelcomeLayout.windowBorderOpacity), lineWidth: 1)
                 .allowsHitTesting(false)
         )
-        .windowVibrancy(contentSize: NSSize(width: 802, height: 470))
+        .windowVibrancy(contentSize: NSSize(width: WelcomeLayout.windowWidth,
+                                            height: WelcomeLayout.windowHeight))
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
@@ -157,14 +159,14 @@ private struct WelcomeActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: WelcomeLayout.actionButtonIconSpacing) {
                 Image(systemName: icon)
                     .font(.title2)
-                    .frame(width: 24)
-                
+                    .frame(width: WelcomeLayout.actionButtonIconWidth)
+
                 Text(title)
                     .font(.headline)
-                
+
                 Spacer()
             }
         }
@@ -189,18 +191,19 @@ private struct RecentVideoRowContent: View {
     @Environment(\.isHovered) private var isHovered
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WelcomeLayout.recentRowContentSpacing) {
             Image(systemName: "doc.richtext.fill")
                 .font(.title2)
                 .foregroundStyle(isHovered ? .white : .blue)
-                .frame(width: 40, height: 40)
-            
-            VStack(alignment: .leading, spacing: 2) {
+                .frame(width: WelcomeLayout.recentRowIconFrameSize,
+                       height: WelcomeLayout.recentRowIconFrameSize)
+
+            VStack(alignment: .leading, spacing: WelcomeLayout.recentRowTextSpacing) {
                 Text(video.title)
                     .font(.headline)
                     .foregroundStyle(isHovered ? .white : .primary)
                     .lineLimit(1)
-                
+
                 Text(video.url.path)
                     .font(.caption)
                     .foregroundStyle(isHovered ? .white.opacity(0.8) : .secondary)
