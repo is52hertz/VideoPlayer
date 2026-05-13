@@ -12,7 +12,12 @@ struct WelcomeView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     @Query(sort: \RecentVideo.lastOpened, order: .reverse) private var recentVideos: [RecentVideo]
 
-    private let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Video Player"
+    private let appName: String = {
+        let info = Bundle.main.infoDictionary
+        return (info?["CFBundleDisplayName"] as? String)
+            ?? (info?["CFBundleName"] as? String)
+            ?? "Video Player"
+    }()
     private let appVersion = "Version Preview"
 
     var body: some View {
