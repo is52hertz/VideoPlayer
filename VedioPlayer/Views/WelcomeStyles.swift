@@ -25,7 +25,7 @@ struct WelcomeAppIcon: View {
         Image(nsImage: NSApplication.shared.applicationIconImage)
             .resizable()
             .scaledToFit()
-            .frame(width: 120, height: 120)
+            .frame(width: 130, height: 130)
             .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
     }
 }

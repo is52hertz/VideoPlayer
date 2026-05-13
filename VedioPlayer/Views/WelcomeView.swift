@@ -32,6 +32,7 @@ struct WelcomeView: View {
                         WelcomeAppIcon()
                             .welcomeAppIconGlow()
                             .padding(.bottom, 18)
+                            .frame(width: 120, height: 120)
 
                         Text(appName)
                             .font(.system(size: 28, weight: .bold))
