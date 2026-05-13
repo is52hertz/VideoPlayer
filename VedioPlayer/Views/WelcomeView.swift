@@ -109,7 +109,11 @@ struct WelcomeView: View {
             .preferredColorScheme(.dark)
         }
         .frame(width: 802, height: 470)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+        }
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)

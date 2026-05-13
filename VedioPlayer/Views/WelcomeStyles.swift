@@ -57,7 +57,7 @@ struct WelcomeActionButtonStyle: ButtonStyle {
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(isHovered ? Color.white.opacity(0.12) : Color.white.opacity(0.06))
-                    .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             )
             .contentShape(Rectangle())
             .onHover { hovering in
@@ -78,8 +78,8 @@ struct RecentVideoRowStyle: ButtonStyle {
                 ZStack {
                     if isHovered {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.accentColor.opacity(0.2))
-                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .fill(Color.accentColor.opacity(0.15))
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                 }
             )
