@@ -12,37 +12,37 @@
 			containerPortal = 91A1959D2FB1819400C9E0DB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 91A195A42FB1819400C9E0DB;
-			remoteInfo = VedioPlayer;
+			remoteInfo = VideoPlayer;
 		};
 		91A195BD2FB1819500C9E0DB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 91A1959D2FB1819400C9E0DB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 91A195A42FB1819400C9E0DB;
-			remoteInfo = VedioPlayer;
+			remoteInfo = VideoPlayer;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		91A195A52FB1819400C9E0DB /* VedioPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VedioPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		91A195B22FB1819500C9E0DB /* VedioPlayerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VedioPlayerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		91A195BC2FB1819500C9E0DB /* VedioPlayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VedioPlayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		91A195A52FB1819400C9E0DB /* VideoPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VideoPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		91A195B22FB1819500C9E0DB /* VideoPlayerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VideoPlayerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		91A195BC2FB1819500C9E0DB /* VideoPlayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VideoPlayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		91A195A72FB1819400C9E0DB /* VedioPlayer */ = {
+		91A195A72FB1819400C9E0DB /* VideoPlayer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = VedioPlayer;
+			path = VideoPlayer;
 			sourceTree = "<group>";
 		};
-		91A195B52FB1819500C9E0DB /* VedioPlayerTests */ = {
+		91A195B52FB1819500C9E0DB /* VideoPlayerTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = VedioPlayerTests;
+			path = VideoPlayerTests;
 			sourceTree = "<group>";
 		};
-		91A195BF2FB1819500C9E0DB /* VedioPlayerUITests */ = {
+		91A195BF2FB1819500C9E0DB /* VideoPlayerUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = VedioPlayerUITests;
+			path = VideoPlayerUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		91A1959C2FB1819400C9E0DB = {
 			isa = PBXGroup;
 			children = (
-				91A195A72FB1819400C9E0DB /* VedioPlayer */,
-				91A195B52FB1819500C9E0DB /* VedioPlayerTests */,
-				91A195BF2FB1819500C9E0DB /* VedioPlayerUITests */,
+				91A195A72FB1819400C9E0DB /* VideoPlayer */,
+				91A195B52FB1819500C9E0DB /* VideoPlayerTests */,
+				91A195BF2FB1819500C9E0DB /* VideoPlayerUITests */,
 				91A195A62FB1819400C9E0DB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +85,9 @@
 		91A195A62FB1819400C9E0DB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				91A195A52FB1819400C9E0DB /* VedioPlayer.app */,
-				91A195B22FB1819500C9E0DB /* VedioPlayerTests.xctest */,
-				91A195BC2FB1819500C9E0DB /* VedioPlayerUITests.xctest */,
+				91A195A52FB1819400C9E0DB /* VideoPlayer.app */,
+				91A195B22FB1819500C9E0DB /* VideoPlayerTests.xctest */,
+				91A195BC2FB1819500C9E0DB /* VideoPlayerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		91A195A42FB1819400C9E0DB /* VedioPlayer */ = {
+		91A195A42FB1819400C9E0DB /* VideoPlayer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 91A195C62FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VedioPlayer" */;
+			buildConfigurationList = 91A195C62FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VideoPlayer" */;
 			buildPhases = (
 				91A195A12FB1819400C9E0DB /* Sources */,
 				91A195A22FB1819400C9E0DB /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				91A195A72FB1819400C9E0DB /* VedioPlayer */,
+				91A195A72FB1819400C9E0DB /* VideoPlayer */,
 			);
-			name = VedioPlayer;
+			name = VideoPlayer;
 			packageProductDependencies = (
 			);
-			productName = VedioPlayer;
-			productReference = 91A195A52FB1819400C9E0DB /* VedioPlayer.app */;
+			productName = VideoPlayer;
+			productReference = 91A195A52FB1819400C9E0DB /* VideoPlayer.app */;
 			productType = "com.apple.product-type.application";
 		};
-		91A195B12FB1819500C9E0DB /* VedioPlayerTests */ = {
+		91A195B12FB1819500C9E0DB /* VideoPlayerTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 91A195C92FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VedioPlayerTests" */;
+			buildConfigurationList = 91A195C92FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VideoPlayerTests" */;
 			buildPhases = (
 				91A195AE2FB1819500C9E0DB /* Sources */,
 				91A195AF2FB1819500C9E0DB /* Frameworks */,
@@ -131,18 +131,18 @@
 				91A195B42FB1819500C9E0DB /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				91A195B52FB1819500C9E0DB /* VedioPlayerTests */,
+				91A195B52FB1819500C9E0DB /* VideoPlayerTests */,
 			);
-			name = VedioPlayerTests;
+			name = VideoPlayerTests;
 			packageProductDependencies = (
 			);
-			productName = VedioPlayerTests;
-			productReference = 91A195B22FB1819500C9E0DB /* VedioPlayerTests.xctest */;
+			productName = VideoPlayerTests;
+			productReference = 91A195B22FB1819500C9E0DB /* VideoPlayerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		91A195BB2FB1819500C9E0DB /* VedioPlayerUITests */ = {
+		91A195BB2FB1819500C9E0DB /* VideoPlayerUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 91A195CC2FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VedioPlayerUITests" */;
+			buildConfigurationList = 91A195CC2FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VideoPlayerUITests" */;
 			buildPhases = (
 				91A195B82FB1819500C9E0DB /* Sources */,
 				91A195B92FB1819500C9E0DB /* Frameworks */,
@@ -154,13 +154,13 @@
 				91A195BE2FB1819500C9E0DB /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				91A195BF2FB1819500C9E0DB /* VedioPlayerUITests */,
+				91A195BF2FB1819500C9E0DB /* VideoPlayerUITests */,
 			);
-			name = VedioPlayerUITests;
+			name = VideoPlayerUITests;
 			packageProductDependencies = (
 			);
-			productName = VedioPlayerUITests;
-			productReference = 91A195BC2FB1819500C9E0DB /* VedioPlayerUITests.xctest */;
+			productName = VideoPlayerUITests;
+			productReference = 91A195BC2FB1819500C9E0DB /* VideoPlayerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 91A195A02FB1819400C9E0DB /* Build configuration list for PBXProject "VedioPlayer" */;
+			buildConfigurationList = 91A195A02FB1819400C9E0DB /* Build configuration list for PBXProject "VideoPlayer" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				91A195A42FB1819400C9E0DB /* VedioPlayer */,
-				91A195B12FB1819500C9E0DB /* VedioPlayerTests */,
-				91A195BB2FB1819500C9E0DB /* VedioPlayerUITests */,
+				91A195A42FB1819400C9E0DB /* VideoPlayer */,
+				91A195B12FB1819500C9E0DB /* VideoPlayerTests */,
+				91A195BB2FB1819500C9E0DB /* VideoPlayerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		91A195B42FB1819500C9E0DB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 91A195A42FB1819400C9E0DB /* VedioPlayer */;
+			target = 91A195A42FB1819400C9E0DB /* VideoPlayer */;
 			targetProxy = 91A195B32FB1819500C9E0DB /* PBXContainerItemProxy */;
 		};
 		91A195BE2FB1819500C9E0DB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 91A195A42FB1819400C9E0DB /* VedioPlayer */;
+			target = 91A195A42FB1819400C9E0DB /* VideoPlayer */;
 			targetProxy = 91A195BD2FB1819500C9E0DB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -390,7 +390,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "Video Player";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = VedioPlayer/VedioPlayer.entitlements;
+				CODE_SIGN_ENTITLEMENTS = VideoPlayer/VideoPlayer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 29QGYWRLCD;
@@ -414,7 +414,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VedioPlayer;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VideoPlayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -436,7 +436,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "Video Player";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = VedioPlayer/VedioPlayer.entitlements;
+				CODE_SIGN_ENTITLEMENTS = VideoPlayer/VideoPlayer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 29QGYWRLCD;
@@ -460,7 +460,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VedioPlayer;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VideoPlayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -488,7 +488,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VedioPlayerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VideoPlayerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -498,7 +498,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VedioPlayer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VedioPlayer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VideoPlayer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VideoPlayer";
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Debug;
@@ -514,7 +514,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VedioPlayerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VideoPlayerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -524,7 +524,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VedioPlayer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VedioPlayer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VideoPlayer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VideoPlayer";
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Release;
@@ -539,7 +539,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VedioPlayerUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VideoPlayerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -549,7 +549,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = VedioPlayer;
+				TEST_TARGET_NAME = VideoPlayer;
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Debug;
@@ -564,7 +564,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VedioPlayerUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.Teethe.VideoPlayerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -574,7 +574,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = VedioPlayer;
+				TEST_TARGET_NAME = VideoPlayer;
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Release;
@@ -582,7 +582,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		91A195A02FB1819400C9E0DB /* Build configuration list for PBXProject "VedioPlayer" */ = {
+		91A195A02FB1819400C9E0DB /* Build configuration list for PBXProject "VideoPlayer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				91A195C42FB1819500C9E0DB /* Debug */,
@@ -591,7 +591,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		91A195C62FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VedioPlayer" */ = {
+		91A195C62FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VideoPlayer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				91A195C72FB1819500C9E0DB /* Debug */,
@@ -600,7 +600,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		91A195C92FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VedioPlayerTests" */ = {
+		91A195C92FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VideoPlayerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				91A195CA2FB1819500C9E0DB /* Debug */,
@@ -609,7 +609,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		91A195CC2FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VedioPlayerUITests" */ = {
+		91A195CC2FB1819500C9E0DB /* Build configuration list for PBXNativeTarget "VideoPlayerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				91A195CD2FB1819500C9E0DB /* Debug */,

@@ -1,13 +1,13 @@
 //
-//  VedioPlayerTests.swift
-//  VedioPlayerTests
+//  VideoPlayerTests.swift
+//  VideoPlayerTests
 //
 //  Created by is52hertz on 2026/5/11.
 //
 
 import Testing
 
-struct VedioPlayerTests {
+struct VideoPlayerTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.

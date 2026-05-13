@@ -1,13 +1,13 @@
 //
-//  VedioPlayerUITests.swift
-//  VedioPlayerUITests
+//  VideoPlayerUITests.swift
+//  VideoPlayerUITests
 //
 //  Created by is52hertz on 2026/5/11.
 //
 
 import XCTest
 
-final class VedioPlayerUITests: XCTestCase {
+final class VideoPlayerUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

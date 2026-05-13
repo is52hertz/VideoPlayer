@@ -30,10 +30,10 @@ Use this skill to ensure the VideoPlayer app adheres to Apple's Human Interface 
 3. **Interactive Audit**: Test gestures, keyboard shortcuts (macOS), and control accessibility.
 4. **Platform Specifics**: Ensure macOS feels like a desktop app and iOS feels like a mobile app.
 
-## Related Conventions (VedioPlayer)
+## Related Conventions (VideoPlayer)
 
 - **Liquid Glass**: Fluid transparency and organic blur effects.
 - **View → ViewModel → Engine**: Keep UI logic separated from playback engine.
 
 ---
-*Adapted for VedioPlayer project.*
+*Adapted for VideoPlayer project.*

@@ -1,13 +1,13 @@
 //
-//  VedioPlayerUITestsLaunchTests.swift
-//  VedioPlayerUITests
+//  VideoPlayerUITestsLaunchTests.swift
+//  VideoPlayerUITests
 //
 //  Created by is52hertz on 2026/5/11.
 //
 
 import XCTest
 
-final class VedioPlayerUITestsLaunchTests: XCTestCase {
+final class VideoPlayerUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

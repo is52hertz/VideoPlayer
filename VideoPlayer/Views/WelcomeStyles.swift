@@ -14,8 +14,8 @@ enum WelcomeLayout {
     // Window
     static let windowWidth: CGFloat = 802
     static let windowHeight: CGFloat = 470
-    static let windowCornerRadius: CGFloat = 10
-    static let windowBorderOpacity: Double = 0.14
+    static let windowCornerRadius: CGFloat = 24
+    static let windowBorderOpacity: Double = 0 // Indicates that this stroke is no longer needed, but please retain this effect for subsequent calls.
 
     // Pane split (must sum to 1.0)
     static let leftPaneRatio: CGFloat = 0.62
@@ -24,7 +24,7 @@ enum WelcomeLayout {
     static let leftPaneTintOpacity: Double = 0.25
 
     // App icon
-    static let appIconSize: CGFloat = 130
+    static let appIconSize: CGFloat = 100
     static let appIconFrameSize: CGFloat = 120
     static let appIconBottomPadding: CGFloat = 18
     static let appIconShadowRadius: CGFloat = 10
@@ -36,7 +36,7 @@ enum WelcomeLayout {
     static let appIconGlowOpacity: Double = 0.15
 
     // Title / version block
-    static let appNameFontSize: CGFloat = 28
+    static let appNameFontSize: CGFloat = 36
     static let versionBottomPadding: CGFloat = 32
 
     // Action buttons
@@ -129,7 +129,7 @@ struct WelcomeAppIcon: View {
                 radius: WelcomeLayout.appIconShadowRadius,
                 y: WelcomeLayout.appIconShadowYOffset
             )
-            .accessibilityLabel(Text("VedioPlayer app icon"))
+            .accessibilityLabel(Text("Video Player app icon"))
             .environment(\.colorScheme, systemAppearance.isDark ? .dark : .light)
     }
 }

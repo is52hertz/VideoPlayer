@@ -12,7 +12,7 @@ For **all** build / test / run / debug / simulator tasks in this Apple platform 
 3. Use XcodeBuildMCP MCP tools instead of raw shell calls (`xcodebuild`, `xcrun`, `simctl`).
 
 Key commands per AGENTS.md:
-- Build: `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer build`
-- Test:  `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer test`
+- Build: `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer build`
+- Test:  `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer test`
 
 Do not proceed or commit if the build fails.

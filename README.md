@@ -1,4 +1,4 @@
-# VedioPlayer
+# Video Player
 
 A native video player for macOS, iOS, and iPadOS, built with a focus on fluid transparency, organic blur, and a "Liquid Glass" aesthetic.
 
@@ -24,11 +24,11 @@ This project is optimized for AI-assisted development using:
 
 ## Project Structure
 
-- `VedioPlayer/`: Main application source.
+- `VideoPlayer/`: Main application source.
   - `Engine/`: Playback logic and AVPlayer integration.
   - `Views/`: UI components and "Glass" primitives.
   - `ViewModel/`: State management and business logic.
-- `VedioPlayer.xcodeproj`: Xcode project configuration.
+- `VideoPlayer.xcodeproj`: Xcode project configuration.
 
 ## Getting Started
 
@@ -36,7 +36,7 @@ This project is optimized for AI-assisted development using:
    ```bash
    git clone git@github.com:is52hertz/VideoPlayer.git
    ```
-2. Open `VedioPlayer.xcodeproj` in Xcode.
+2. Open `VideoPlayer.xcodeproj` in Xcode.
 3. Build and run on your preferred Apple platform.
 
 ## License

@@ -11,7 +11,7 @@
 | **Stack** | SwiftUI · AVFoundation/AVKit · SwiftData (planned) |
 | **Architecture** | View → ViewModel → PlayerEngine → AVPlayer |
 | **Design** | Liquid Glass — fluid transparency, organic blur, HIG-first |
-| **Spelling** | Project name is `VedioPlayer` (intentional) |
+| **Naming** | Project name is `VideoPlayer` (identifier) / `Video Player` (display) |
 
 **Hard constraints:** Native Apple APIs only. No Electron/RN/Flutter/WebView. No accounts, cloud sync, or online scraping.
 
@@ -46,8 +46,8 @@
 - **Build check:** After every round of code changes, run Key Commands. Do not proceed or commit if the build fails.
 
 ### Key Commands
-- **Build:** `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer build`
-- **Test:** `xcodebuild -project VedioPlayer.xcodeproj -scheme VedioPlayer test`
+- **Build:** `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer build`
+- **Test:** `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer test`
 
 ---
 

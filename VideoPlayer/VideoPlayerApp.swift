@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct VedioPlayerApp: App {
+struct VideoPlayerApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private var viewModel: PlayerViewModel { appDelegate.viewModel }
@@ -20,7 +20,7 @@ struct VedioPlayerApp: App {
         .windowResizability(.contentSize)
         .modelContainer(for: RecentVideo.self)
 
-        Window("VedioPlayer", id: "player") {
+        Window("Video Player", id: "player") {
             ContentView(viewModel: viewModel)
                 .environment(viewModel)
                 .onReceive(NotificationCenter.default.publisher(for: .init("VideoLoadedNotification"))) { _ in
