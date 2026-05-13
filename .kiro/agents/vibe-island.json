@@ -1,0 +1,41 @@
+{
+  "description": "Default agent with Vibe Island monitoring",
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "/Users/is52hertz/.vibe-island/bin/vibe-island-bridge --source kiro"
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "/Users/is52hertz/.vibe-island/bin/vibe-island-bridge --source kiro",
+        "matcher": "*"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "/Users/is52hertz/.vibe-island/bin/vibe-island-bridge --source kiro",
+        "matcher": "*"
+      }
+    ],
+    "stop": [
+      {
+        "command": "/Users/is52hertz/.vibe-island/bin/vibe-island-bridge --source kiro"
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "/Users/is52hertz/.vibe-island/bin/vibe-island-bridge --source kiro"
+      }
+    ]
+  },
+  "includeMcpJson": true,
+  "name": "vibe-island",
+  "resources": [
+    "file://AGENTS.md",
+    "skill://.kiro/skills/**/SKILL.md"
+  ],
+  "tools": [
+    "*"
+  ]
+}
