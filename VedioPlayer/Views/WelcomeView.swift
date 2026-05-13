@@ -21,8 +21,8 @@ struct WelcomeView: View {
             HStack(spacing: 0) {
                 // Left Pane: Info and Actions (62%)
                 ZStack(alignment: .topLeading) {
-                    Rectangle()
-                        .fill(.black.opacity(0.15)) // Subtle dark tint for Liquid Glass
+                    VisualEffectBackground(material: .underWindowBackground)
+                    Color.black.opacity(0.25) // Subtle lighter tint vs left pane
 
                     VStack(spacing: 0) {
                         Spacer()
@@ -74,8 +74,8 @@ struct WelcomeView: View {
                 
                 // Right Pane: Recent Files (38%)
                 ZStack {
-                    Rectangle()
-                        .fill(.white.opacity(0.02)) // Subtle light tint for Liquid Glass
+                    VisualEffectBackground(material: .underWindowBackground)
+                    Color.white.opacity(0.08) // Subtle lighter tint vs left pane
 
                     VStack(alignment: .leading, spacing: 0) {
                         if recentVideos.isEmpty {
@@ -106,14 +106,10 @@ struct WelcomeView: View {
                 .frame(width: geometry.size.width * 0.38)
             }
             .ignoresSafeArea()
-            .preferredColorScheme(.dark)
+            .environment(\.colorScheme, .dark)
         }
         .frame(width: 802, height: 470)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea()
-        }
+        .windowVibrancy()
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             viewModel.handleDrop(providers: providers)
