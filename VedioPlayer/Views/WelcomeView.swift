@@ -121,7 +121,6 @@ struct WelcomeView: View {
             .environment(\.colorScheme, .dark)
         }
         .frame(width: 802, height: 470)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)

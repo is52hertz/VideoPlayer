@@ -49,6 +49,10 @@ private struct WindowVibrancyConfigurator: NSViewRepresentable {
             window.center()
             // Allow dragging from anywhere
             window.isMovableByWindowBackground = true
+            // Round the window's content view at the AppKit level
+            window.contentView?.wantsLayer = true
+            window.contentView?.layer?.cornerRadius = 10
+            window.contentView?.layer?.masksToBounds = true
         }
         return view
     }
