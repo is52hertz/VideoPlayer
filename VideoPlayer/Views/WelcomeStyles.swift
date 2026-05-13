@@ -60,8 +60,16 @@ enum WelcomeLayout {
     static let recentRowTextSpacing: CGFloat = 2
 
     // Close button (Pixelmator-style)
+    // Size:     icon glyph size for `xmark.circle.fill`.
+    // Position: padding from window top-leading; `.topLeading` alignment of the
+    //           outer ZStack turns this into the button's relative offset.
+    // Color:    the button has *no* explicit background fill — it relies on the
+    //           SF Symbol's filled circle with `.secondary` foreground, which
+    //           inherits the welcome chrome's forced `.dark` color scheme.
+    //           Keep it semantic; do not hardcode a color here.
     static let closeButtonIconSize: CGFloat = 14
     static let closeButtonPadding: CGFloat = 10
+    static let closeButtonFadeDuration: Double = 0.2
 }
 
 /// Tracks the **system** appearance (Light vs Dark) independently of any

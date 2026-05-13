@@ -12,6 +12,11 @@ struct WelcomeView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     @Query(sort: \RecentVideo.lastOpened, order: .reverse) private var recentVideos: [RecentVideo]
 
+    /// Tracks whether the cursor is anywhere over the welcome window content,
+    /// so we can fade the custom close button in/out — matching the
+    /// "controls appear only when needed" tenet in AGENTS.md.
+    @State private var isWindowHovered = false
+
     private let appName: String = {
         let info = Bundle.main.infoDictionary
         return (info?["CFBundleDisplayName"] as? String)
@@ -113,7 +118,9 @@ struct WelcomeView: View {
                 .frame(width: geometry.size.width * WelcomeLayout.rightPaneRatio)
                 }
 
-                // Custom close button (Pixelmator Pro style)
+                // Custom close button (Pixelmator Pro style).
+                // Only revealed while the cursor is over the window; otherwise
+                // it fades out so the welcome chrome stays calm.
                 Button {
                     NSApplication.shared.keyWindow?.close()
                 } label: {
@@ -123,8 +130,15 @@ struct WelcomeView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(WelcomeLayout.closeButtonPadding)
+                .opacity(isWindowHovered ? 1 : 0)
+                .allowsHitTesting(isWindowHovered)
+                .animation(.easeInOut(duration: WelcomeLayout.closeButtonFadeDuration),
+                           value: isWindowHovered)
             }
             .environment(\.colorScheme, .dark)
+            .onHover { hovering in
+                isWindowHovered = hovering
+            }
         }
         .frame(width: WelcomeLayout.windowWidth, height: WelcomeLayout.windowHeight)
         .overlay(
