@@ -388,7 +388,7 @@
 		91A195C72FB1819500C9E0DB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Video Player";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VedioPlayer/VedioPlayer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -434,7 +434,7 @@
 		91A195C82FB1819500C9E0DB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Video Player";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VedioPlayer/VedioPlayer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
