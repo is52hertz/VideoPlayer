@@ -18,11 +18,12 @@ struct WelcomeView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
         GeometryReader { geometry in
-            HStack(spacing: 0) {
-                // Left Pane: Info and Actions (62%)
-                ZStack {
-                    VisualEffectBackground(material: .underWindowBackground)
-                    Color.black.opacity(0.25) // Subtle lighter tint vs left pane
+            ZStack(alignment: .topLeading) {
+                HStack(spacing: 0) {
+                    // Left Pane: Info and Actions (62%)
+                    ZStack {
+                        VisualEffectBackground(material: .underWindowBackground)
+                        Color.black.opacity(0.25)
 
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
@@ -104,6 +105,18 @@ struct WelcomeView: View {
                     }
                 }
                 .frame(width: geometry.size.width * 0.38)
+                }
+
+                // Custom close button (Pixelmator Pro style)
+                Button {
+                    NSApplication.shared.keyWindow?.close()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(10)
             }
             .environment(\.colorScheme, .dark)
         }

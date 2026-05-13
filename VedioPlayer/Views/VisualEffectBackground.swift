@@ -23,9 +23,8 @@ struct VisualEffectBackground: NSViewRepresentable {
 }
 
 /// Configures the hosting NSWindow for transparency so NSVisualEffectView
-/// can show true behind-window blur. Also enables `fullSizeContentView` and
-/// pins the window to a fixed content size so SwiftUI layout and the
-/// overlay border align with the actual NSWindow bounds.
+/// can show true behind-window blur. Hides the title bar and traffic lights
+/// completely, giving a borderless window appearance.
 private struct WindowVibrancyConfigurator: NSViewRepresentable {
     let contentSize: NSSize
 
@@ -36,14 +35,19 @@ private struct WindowVibrancyConfigurator: NSViewRepresentable {
             window.isOpaque = false
             window.backgroundColor = .clear
             window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
             window.styleMask.insert(.fullSizeContentView)
-            // Lock the window to the requested content size. Using min/max
-            // content size avoids fights with SwiftUI's contentSize
-            // resizability and any restored window state.
+            // Hide traffic light buttons
+            window.standardWindowButton(.closeButton)?.isHidden = true
+            window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            window.standardWindowButton(.zoomButton)?.isHidden = true
+            // Lock size
             window.contentMinSize = contentSize
             window.contentMaxSize = contentSize
             window.setContentSize(contentSize)
             window.center()
+            // Allow dragging from anywhere
+            window.isMovableByWindowBackground = true
         }
         return view
     }
