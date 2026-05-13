@@ -20,35 +20,35 @@ struct WelcomeView: View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
                 // Left Pane: Info and Actions (62%)
-                ZStack(alignment: .topLeading) {
+                ZStack {
                     VisualEffectBackground(material: .underWindowBackground)
                     Color.black.opacity(0.25) // Subtle lighter tint vs left pane
 
                     VStack(spacing: 0) {
-                        Spacer()
+                        Spacer(minLength: 0)
 
                         // App Icon area
                         WelcomeAppIcon()
                             .welcomeAppIconGlow()
-                            .frame(width: 130, height: 130)
-                            .padding(.bottom, 24)
+                            .frame(width: 120, height: 120)
+                            .padding(.bottom, 18)
 
                         Text(appName)
-                            .font(.system(size: 32, weight: .bold))
-                        
+                            .font(.system(size: 28, weight: .bold))
+
                         Text(appVersion)
-                            .font(.body)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
-                            .padding(.bottom, 48)
+                            .padding(.bottom, 32)
 
                         // Actions
-                        VStack(spacing: 12) {
+                        VStack(spacing: 10) {
                             WelcomeActionButton(
                                 icon: "folder",
                                 title: "Open Finder...",
                                 action: { viewModel.isShowingFilePicker = true }
                             )
-                            
+
                             WelcomeActionButton(
                                 icon: "photo.on.rectangle",
                                 title: "Open Photos...",
@@ -56,7 +56,7 @@ struct WelcomeView: View {
                                     // Placeholder
                                 }
                             )
-                            
+
                             WelcomeActionButton(
                                 icon: "gearshape",
                                 title: "Settings...",
@@ -65,10 +65,10 @@ struct WelcomeView: View {
                                 }
                             )
                         }
-                        .padding(.horizontal, 40)
-                        
-                        Spacer()
+
+                        Spacer(minLength: 0)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(width: geometry.size.width * 0.62)
                 
@@ -109,6 +109,11 @@ struct WelcomeView: View {
             .environment(\.colorScheme, .dark)
         }
         .frame(width: 802, height: 470)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                .allowsHitTesting(false)
+        )
         .windowVibrancy()
         // Enable file dropping on the welcome screen
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
