@@ -1,0 +1,105 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.63257,0.16725,0.00763,1.00000",
+      "display-p3:0.11645,0.02125,0.02020,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.7
+      }
+    }
+  },
+  "groups" : [
+    {
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
+        {
+          "glass" : false,
+          "image-name" : "3 – Layer 9.svg",
+          "name" : "3 – Layer 9"
+        }
+      ],
+      "lighting" : "individual",
+      "opacity" : 0.2,
+      "shadow" : {
+        "kind" : "none",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.3
+      }
+    },
+    {
+      "blur-material" : 0.08,
+      "layers" : [
+        {
+          "image-name" : "3 – Layer 10.svg",
+          "name" : "3 – Layer 10"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    },
+    {
+      "blur-material" : 0.5,
+      "hidden" : false,
+      "layers" : [
+        {
+          "image-name" : "4 – Layer 4.svg",
+          "name" : "4 – Layer 4"
+        },
+        {
+          "hidden" : false,
+          "image-name" : "2 – Layer 5.svg",
+          "name" : "2 – Layer 5"
+        }
+      ],
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "1 – Layer 4.svg",
+          "name" : "1 – Layer 4"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
