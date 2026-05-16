@@ -1,1 +1,1 @@
-Refer primarily to AGENTS.md for project instructions. CLAUDE.md was created at the very beginning of this project, marking the original ideas. GEMINI.md was a superset of CLAUDE.md. Both are now deprecated in favor of AGENTS.md. Consult the archived backup (CLAUDE.md.backup.20260513T103046) only if certain details are unclear. You MUST inform the user whenever you access the backup file.
+agents.md
