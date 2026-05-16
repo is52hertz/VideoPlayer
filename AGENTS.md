@@ -1,5 +1,5 @@
 # AGENTS.md — SSOT
-> Single source of truth for all AI agents. GEMINI.md and CLAUDE.md are superseded by this file.
+> Single source of truth for all AI agents working in this repo.
 
 ---
 
@@ -11,7 +11,7 @@
 | **Stack** | SwiftUI · AVFoundation/AVKit · SwiftData (planned) |
 | **Architecture** | View → ViewModel → PlayerEngine → AVPlayer |
 | **Design** | Liquid Glass — fluid transparency, organic blur, HIG-first |
-| **Naming** | Project name is `VideoPlayer` (identifier) / `Video Player` (display) |
+| **Naming** | `VideoPlayer` (identifier) / `Video Player` (display) |
 
 **Hard constraints:** Native Apple APIs only. No Electron/RN/Flutter/WebView. No accounts, cloud sync, or online scraping.
 
@@ -26,36 +26,21 @@
 
 ---
 
-## Agent Protocol
+## Scope Discipline
 
-**All agents:**
-- Read this file before starting any task.
-- Follow the Unified Guidelines below without exception.
-- Follow the Git Workflow section below — commits are mandatory, not optional.
-
-**Gemini CLI:** Primary agent. Owns proactive commits and workflow automation.
-
-**Claude / Kiro / others:** Peer agents. Same rules apply. Defer to this file on any conflict with agent-specific config.
-
-**HIG Doctor** — auto-invoke on any UI/UX change (Views, Glass primitives, layout, materials, motion, gestures, controls). Skip for non-UI tasks.
+- Stay strictly within the requested change. Do not opportunistically refactor, rename, or "tidy up" adjacent code.
+- If you spot a related issue, **surface it to the user first** — do not silently fix it in the same pass.
+- One commit = one logical unit. No drive-by edits riding along.
 
 ---
 
-## Build Workflow
+## Workflow
 
-- **Build check:** After every round of code changes, run Key Commands. Do not proceed or commit if the build fails.
-
-### Key Commands
-- **Build:** `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer build`
-- **Test:** `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer test`
-
----
-
-## Git Workflow
-
-- **Format:** `^(feat|fix|refactor|style|docs|test|chore): .{1,72}$`
-- **Auto-commit:** After each round of meaningful changes or at task end, stage and commit immediately — do not wait for a manual reminder.
-- **Judgment:** Commit when a logical unit of work is complete. Do not commit mid-refactor or on partial changes.
+- **Build after every round of code changes.** Do not proceed or commit on a broken build.
+  - Build: `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer build`
+  - Test:  `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer test`
+- **Commit format:** `^(feat|fix|refactor|style|docs|test|chore): .{1,72}$`
+- **Auto-commit** when a logical unit lands — do not wait for a reminder, do not commit mid-refactor.
 
 ---
 
@@ -68,44 +53,34 @@
 
 ### Design System
 - Video content is the primary surface. Controls appear only when needed.
-- Centralize all "liquid" effects in Glass primitives: `GlassPanel` · `GlassButton` · `GlassSlider` · `GlassToolbar` · `GlassPopover`.
-- Never scatter `.background(.ultraThinMaterial)` / `.shadow()` / `.blur()` across feature views.
-- Welcome and Player interfaces maintain **separated** style definitions — do not couple them.
+- Centralize all "liquid" effects in Glass primitives: `GlassPanel` · `GlassButton` · `GlassSlider` · `GlassToolbar` · `GlassPopover`. Never scatter `.background(.ultraThinMaterial)` / `.shadow()` / `.blur()` across feature views.
+- Welcome and Player keep **separated** visual languages — they share Glass primitives at the base layer but their compositions must not couple.
 - No decorative animation, visual noise, or dashboard-style layouts.
 
 ### Code
-- Small, focused files. Prefer readable over clever.
-- Use `@Observable` macro for state. Logic in ViewModels/Services.
+- Small, focused files. Readable over clever.
+- `@Observable` macro for state. Logic lives in ViewModels/Services.
 - macOS: proper windowing and menus. iOS/iPadOS: touch-first and immersive.
 
 ### Review Checklist
-- [ ] Compiles?
-- [ ] Change is inside requested scope?
+- [ ] Inside requested scope?
 - [ ] UI feels native and HIG-compliant?
 - [ ] Video is visually dominant?
-- [ ] Styling is centralized in Glass components?
 - [ ] No feature creep or unnecessary dependencies?
 - [ ] Easy to revise later?
 
-### LLDB Debugging
-When diagnosing playback bugs or ViewModel state issues, prefer LLDB over print statements:
-1. `debug_attach_sim` — attach to running app
-2. `debug_breakpoint_add` — break at suspect call site
-3. `debug_variables` / `debug_stack` — inspect state
-4. `debug_continue` → `debug_detach` when done
+---
 
-### Test Coverage
-After changes to `Engine/` or `ViewModel/`, run tests and check coverage:
-1. `test_sim` — run test suite
-2. `get_coverage_report` — per-target summary
-3. `get_file_coverage` — function-level gaps on changed files
+## Agent Tooling
 
-### UI Validation
-Trigger: **auto** on significant UI changes (new screen, major layout, new interactive component); **manual** only when user explicitly requests. Skip for minor tweaks (color, spacing, copy).
+> Short names below map to **XcodeBuildMCP** tools (e.g. `test_sim` → `mcp__XcodeBuildMCP__test_sim`).
 
-1. `build_run_sim` — build and launch
-2. `screenshot` — capture initial state
-3. `snapshot_ui` — inspect view hierarchy and coordinates
-4. `tap` / `swipe` / `type_text` — exercise key interactions
-5. `screenshot` — verify result
-6. Run HIG Doctor review on screenshots
+### HIG Doctor — auto-invoke on UI/UX changes
+Trigger on Views, Glass primitives, layout, materials, motion, gestures, controls. Skip for non-UI tasks.
+- **Primary checklist (all agents):** the in-repo `hig-doctor` skill — project-localized HIG review with VideoPlayer-specific references. Lives at `.claude/skills/hig-doctor/`, `.gemini/skills/hig-doctor/`, `.kiro/skills/hig-doctor/`.
+- **Deeper lookups (Claude Code only):** `apple-skills:hig` for HIG reference docs, `apple-skills:ios-design-consultant` for design judgment calls, `apple-skills:ios-ui-craft` when authoring a new screen from scratch.
+
+### When to Reach for MCP Tools
+- **Playback / ViewModel state bugs:** prefer LLDB (`debug_attach_sim` …) over `print`.
+- **`Engine/` or `ViewModel/` changes:** run `test_sim`, then check `get_coverage_report` / `get_file_coverage`.
+- **Significant UI changes** (new screen, major layout, new interactive component): `build_run_sim` → `screenshot` → exercise → `screenshot`, then run HIG Doctor on screenshots. Skip for color/spacing/copy tweaks.
