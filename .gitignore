@@ -10,4 +10,4 @@ DerivedData/
 .DS_Store
 
 # Claude Code
-.claude/
+# .claude/

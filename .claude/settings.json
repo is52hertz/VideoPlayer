@@ -1,0 +1,19 @@
+{
+  "extraKnownMarketplaces": {
+    "apple-platform-build-tools": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/kylehughes/apple-platform-build-tools-claude-code-plugin.git"
+      }
+    },
+    "patrickserrano-ios-swift-skills": {
+      "source": {
+        "source": "url",
+        "url": "https://www.claudepluginhub.com/marketplaces/plugins/patrickserrano-ios-swift-skills.json"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "swiftui-pro@swiftui-agent-skill": true
+  }
+}
