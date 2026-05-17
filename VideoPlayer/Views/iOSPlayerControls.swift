@@ -19,33 +19,40 @@ struct iOSPlayerControls: View {
         }
     }
 
-    // MARK: - iPhone: full-width gradient overlay
+    // MARK: - iPhone: distributed overlay (Infuse-style)
 
     private var iPhoneOverlay: some View {
-        ZStack(alignment: .bottom) {
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: .clear, location: 0.45),
-                    .init(color: .black.opacity(0.55), location: 1.0),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
+        ZStack {
+            vignette
 
-            VStack(spacing: isLandscapeCompact ? 8 : 16) {
-                playbackButtons(spacing: isLandscapeCompact ? 24 : 40, fontSize: isLandscapeCompact ? 18 : 22)
+            VStack(spacing: 0) {
+                // Top placeholder area — future: close / subtitle / volume
+                Color.clear
+                    .frame(height: isLandscapeCompact ? 44 : 56)
+                    .safeAreaPadding(.top)
+
+                Spacer()
+
+                // Center: playback buttons — vertically centered, no background
+                playbackButtons(
+                    spacing: isLandscapeCompact ? 36 : 48,
+                    backForwardSize: isLandscapeCompact ? 22 : 26,
+                    playSize: isLandscapeCompact ? 32 : 38
+                )
+
+                Spacer()
+
+                // Bottom: progress scrubber — pinned to bottom edge
                 progressRow
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, isLandscapeCompact ? 8 : 16)
+                    .safeAreaPadding(.bottom)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, isLandscapeCompact ? 8 : 16)
-            .safeAreaPadding(.bottom)
         }
+        .ignoresSafeArea()
     }
 
-    // MARK: - iPad: GlassPanel floating
+    // MARK: - iPad: GlassPanel (single glass layer, plain buttons inside)
 
     private var iPadOverlay: some View {
         @Bindable var viewModel = viewModel
@@ -54,6 +61,7 @@ struct iOSPlayerControls: View {
             GlassPanel {
                 VStack(spacing: 12) {
                     HStack(spacing: 16) {
+                        // Volume
                         HStack(spacing: 8) {
                             Image(systemName: "speaker.wave.2.fill")
                                 .font(.system(size: 12))
@@ -64,20 +72,33 @@ struct iOSPlayerControls: View {
 
                         Spacer()
 
+                        // Playback — plain buttons, no nested glass
                         HStack(spacing: 24) {
-                            GlassButton(systemName: "backward.fill", fontSize: 18) {
-                                viewModel.seekBackward(15)
+                            Button { viewModel.seekBackward(15) } label: {
+                                Image(systemName: "backward.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .frame(width: 44, height: 44)
                             }
-                            GlassButton(systemName: playPauseIcon, fontSize: 32) {
-                                viewModel.togglePlayPause()
+                            .buttonStyle(.plain)
+
+                            Button { viewModel.togglePlayPause() } label: {
+                                Image(systemName: playPauseIcon)
+                                    .font(.system(size: 32, weight: .medium))
+                                    .frame(width: 44, height: 44)
                             }
-                            GlassButton(systemName: "forward.fill", fontSize: 18) {
-                                viewModel.seekForward(15)
+                            .buttonStyle(.plain)
+
+                            Button { viewModel.seekForward(15) } label: {
+                                Image(systemName: "forward.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .frame(width: 44, height: 44)
                             }
+                            .buttonStyle(.plain)
                         }
 
                         Spacer()
 
+                        // Utility placeholders
                         HStack(spacing: 16) {
                             Image(systemName: "pip.enter")
                                 .font(.system(size: 14))
@@ -105,11 +126,11 @@ struct iOSPlayerControls: View {
     // MARK: - Shared subviews
 
     @ViewBuilder
-    private func playbackButtons(spacing: CGFloat, fontSize: CGFloat) -> some View {
+    private func playbackButtons(spacing: CGFloat, backForwardSize: CGFloat, playSize: CGFloat) -> some View {
         HStack(spacing: spacing) {
             Button { viewModel.seekBackward(15) } label: {
                 Image(systemName: "backward.fill")
-                    .font(.system(size: fontSize, weight: .medium))
+                    .font(.system(size: backForwardSize, weight: .medium))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
@@ -117,15 +138,15 @@ struct iOSPlayerControls: View {
 
             Button { viewModel.togglePlayPause() } label: {
                 Image(systemName: playPauseIcon)
-                    .font(.system(size: fontSize + 10, weight: .medium))
-                    .frame(width: 44, height: 44)
+                    .font(.system(size: playSize, weight: .medium))
+                    .frame(width: 52, height: 52)
             }
             .buttonStyle(.plain)
             .foregroundStyle(.white)
 
             Button { viewModel.seekForward(15) } label: {
                 Image(systemName: "forward.fill")
-                    .font(.system(size: fontSize, weight: .medium))
+                    .font(.system(size: backForwardSize, weight: .medium))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
@@ -176,6 +197,33 @@ struct iOSPlayerControls: View {
             )
         }
         .frame(height: 28)
+    }
+
+    private var vignette: some View {
+        ZStack {
+            // Top darkening zone
+            VStack {
+                LinearGradient(
+                    colors: [.black.opacity(0.6), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: isLandscapeCompact ? 140 : 180)
+                Spacer()
+            }
+            // Bottom darkening zone
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.65)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: isLandscapeCompact ? 160 : 220)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 
     // MARK: - Helpers
