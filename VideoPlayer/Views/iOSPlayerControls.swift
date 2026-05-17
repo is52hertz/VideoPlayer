@@ -3,16 +3,15 @@ import SwiftUI
 
 struct iOSPlayerControls: View {
     @Environment(PlayerViewModel.self) private var viewModel
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
-    private var isCompact: Bool { horizontalSizeClass == .compact }
-    private var isLandscapeCompact: Bool {
-        horizontalSizeClass == .compact && verticalSizeClass == .compact
-    }
+    // UIDevice is authoritative — horizontalSizeClass is .regular on iPhone Pro Max landscape
+    private var isPhone: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    // iPhone landscape: vertical size class is compact regardless of model
+    private var isLandscape: Bool { verticalSizeClass == .compact }
 
     var body: some View {
-        if isCompact {
+        if isPhone {
             iPhoneOverlay
         } else {
             iPadOverlay
@@ -28,16 +27,16 @@ struct iOSPlayerControls: View {
             VStack(spacing: 0) {
                 // Top placeholder area — future: close / subtitle / volume
                 Color.clear
-                    .frame(height: isLandscapeCompact ? 44 : 56)
+                    .frame(height: isLandscape ? 44 : 56)
                     .safeAreaPadding(.top)
 
                 Spacer()
 
                 // Center: playback buttons — vertically centered, no background
                 playbackButtons(
-                    spacing: isLandscapeCompact ? 36 : 48,
-                    backForwardSize: isLandscapeCompact ? 22 : 26,
-                    playSize: isLandscapeCompact ? 32 : 38
+                    spacing: isLandscape ? 36 : 48,
+                    backForwardSize: isLandscape ? 22 : 26,
+                    playSize: isLandscape ? 32 : 38
                 )
 
                 Spacer()
@@ -45,7 +44,7 @@ struct iOSPlayerControls: View {
                 // Bottom: progress scrubber — pinned to bottom edge
                 progressRow
                     .padding(.horizontal, 20)
-                    .padding(.bottom, isLandscapeCompact ? 8 : 16)
+                    .padding(.bottom, isLandscape ? 8 : 16)
                     .safeAreaPadding(.bottom)
             }
         }
@@ -208,7 +207,7 @@ struct iOSPlayerControls: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: isLandscapeCompact ? 140 : 180)
+                .frame(height: isLandscape ? 140 : 180)
                 Spacer()
             }
             // Bottom darkening zone
@@ -219,7 +218,7 @@ struct iOSPlayerControls: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: isLandscapeCompact ? 160 : 220)
+                .frame(height: isLandscape ? 160 : 220)
             }
         }
         .ignoresSafeArea()
