@@ -39,6 +39,7 @@ struct iOSPlayerControls: View {
                 iPadOverlay
             }
         }
+        .environment(\.colorScheme, .dark)
     }
 
     // MARK: - iPhone: distributed overlay (Infuse-style)

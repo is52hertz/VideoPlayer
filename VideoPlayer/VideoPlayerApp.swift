@@ -45,7 +45,6 @@ struct VideoPlayerApp: App {
                 .onOpenURL { url in
                     viewModel.loadVideo(url: url)
                 }
-                .preferredColorScheme(.dark)
         }
         .modelContainer(for: RecentVideo.self)
         #endif
