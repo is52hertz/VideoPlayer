@@ -5,6 +5,7 @@ import MediaPlayer
 struct iOSPlayerControls: View {
     @Environment(PlayerViewModel.self) private var viewModel
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.colorScheme) private var systemColorScheme
 
     // UIDevice is authoritative — horizontalSizeClass is .regular on iPhone Pro Max landscape
     private var isPhone: Bool { UIDevice.current.userInterfaceIdiom == .phone }
@@ -150,6 +151,10 @@ struct iOSPlayerControls: View {
         }
         .padding(.horizontal, 40)
         .safeAreaPadding(.horizontal)
+        // Dark system = low-light environment: pin pills dark so glass renders
+        // dark from the first frame (no light→dark flash during controls fade-in).
+        // Light system: keep system value so glass adapts to underlying content.
+        .environment(\.colorScheme, systemColorScheme == .dark ? .dark : systemColorScheme)
     }
 
     // MARK: - iPad: GlassPanel (single glass layer, plain buttons inside)
