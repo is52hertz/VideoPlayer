@@ -111,20 +111,19 @@ struct iOSPlayerControls: View {
                 HStack(spacing: 10) {
                     Text("\(Int(viewModel.volume * 100))%")
                         .font(.system(size: 12).monospacedDigit())
-                        .foregroundStyle(.secondary)
 
                     GlassSlider(value: $viewModel.volume, range: 0...1)
                         .frame(width: 70)
 
                     Image(systemName: "speaker.wave.3.fill")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
             }
         }
         .padding(.horizontal, 20)
+        .environment(\.colorScheme, .dark) // Forces dark glass to ensure unified appearance
     }
 
     // MARK: - iPad: GlassPanel (single glass layer, plain buttons inside)
