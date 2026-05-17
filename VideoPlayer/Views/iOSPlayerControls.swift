@@ -14,6 +14,17 @@ struct iOSPlayerControls: View {
     @State private var isScrubbing = false
     @State private var isVolumeScrubbing = false
 
+    private enum Pill {
+        static let hPad: CGFloat      = 12
+        static let vPad: CGFloat      = 6
+        static let contentH: CGFloat  = 28
+        static let iconSize: CGFloat  = 14
+        static let volTextSize: CGFloat = 12
+        static let utilSpacing: CGFloat = 16
+        static let volSpacing: CGFloat  = 10
+        static let volSliderW: CGFloat  = 70
+    }
+
     var body: some View {
         ZStack {
             // MPVolumeView must stay in hierarchy at all times for hardware buttons to work on both iPhone and iPad
@@ -28,7 +39,6 @@ struct iOSPlayerControls: View {
                 iPadOverlay
             }
         }
-        .environment(\.colorScheme, .dark)
     }
 
     // MARK: - iPhone: distributed overlay (Infuse-style)
@@ -83,23 +93,23 @@ struct iOSPlayerControls: View {
                     viewModel.closeVideo()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .bold))
-                        .frame(width: 24, height: 24)
+                        .font(.system(size: Pill.iconSize, weight: .bold))
+                        .frame(width: Pill.contentH, height: Pill.contentH)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, Pill.hPad)
+                .padding(.vertical, Pill.vPad)
             }
 
             // Utilities Pill
             GlassPanel {
-                HStack(spacing: 16) {
+                HStack(spacing: Pill.utilSpacing) {
                     Button {
                         // Future: handle resize
                     } label: {
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.system(size: 14, weight: .medium))
-                            .frame(height: 20)
+                            .font(.system(size: Pill.iconSize, weight: .medium))
+                            .frame(height: Pill.contentH)
                     }
                     .buttonStyle(.plain)
 
@@ -107,33 +117,33 @@ struct iOSPlayerControls: View {
                         // Future: handle PiP
                     } label: {
                         Image(systemName: "pip.enter")
-                            .font(.system(size: 14, weight: .medium))
-                            .frame(height: 20)
+                            .font(.system(size: Pill.iconSize, weight: .medium))
+                            .frame(height: Pill.contentH)
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, Pill.hPad)
+                .padding(.vertical, Pill.vPad)
             }
 
             Spacer()
 
             // Volume Pill
             GlassPanel {
-                HStack(spacing: 10) {
+                HStack(spacing: Pill.volSpacing) {
                     Text("\(Int(viewModel.systemVolume * 100))%")
-                        .font(.system(size: 12).monospacedDigit())
+                        .font(.system(size: Pill.volTextSize).monospacedDigit())
                         .foregroundStyle(.secondary)
 
                     volumeScrubber
-                        .frame(width: 70)
+                        .frame(width: Pill.volSliderW)
 
                     Image(systemName: "speaker.wave.3.fill")
-                        .font(.system(size: 12))
+                        .font(.system(size: Pill.volTextSize))
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, Pill.hPad)
+                .padding(.vertical, Pill.vPad)
             }
         }
         .padding(.horizontal, 40)
