@@ -86,64 +86,66 @@ struct iOSPlayerControls: View {
     }
 
     private var topBar: some View {
-        HStack(spacing: 12) {
-            // Close button (Compact iOS-specific)
-            GlassPanel {
-                Button {
-                    viewModel.closeVideo()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: Pill.iconSize, weight: .bold))
-                        .frame(width: Pill.contentH, height: Pill.contentH)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, Pill.hPad)
-                .padding(.vertical, Pill.vPad)
-            }
-
-            // Utilities Pill
-            GlassPanel {
-                HStack(spacing: Pill.utilSpacing) {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 12) {
+                // Close button (Compact iOS-specific)
+                GlassPanel {
                     Button {
-                        // Future: handle resize
+                        viewModel.closeVideo()
                     } label: {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.system(size: Pill.iconSize, weight: .medium))
-                            .frame(height: Pill.contentH)
+                        Image(systemName: "xmark")
+                            .font(.system(size: Pill.iconSize, weight: .bold))
+                            .frame(width: Pill.contentH, height: Pill.contentH)
                     }
                     .buttonStyle(.plain)
+                    .padding(.horizontal, Pill.hPad)
+                    .padding(.vertical, Pill.vPad)
+                }
 
-                    Button {
-                        // Future: handle PiP
-                    } label: {
-                        Image(systemName: "pip.enter")
-                            .font(.system(size: Pill.iconSize, weight: .medium))
-                            .frame(height: Pill.contentH)
+                // Utilities Pill
+                GlassPanel {
+                    HStack(spacing: Pill.utilSpacing) {
+                        Button {
+                            // Future: handle resize
+                        } label: {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: Pill.iconSize, weight: .medium))
+                                .frame(height: Pill.contentH)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            // Future: handle PiP
+                        } label: {
+                            Image(systemName: "pip.enter")
+                                .font(.system(size: Pill.iconSize, weight: .medium))
+                                .frame(height: Pill.contentH)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, Pill.hPad)
+                    .padding(.vertical, Pill.vPad)
                 }
-                .padding(.horizontal, Pill.hPad)
-                .padding(.vertical, Pill.vPad)
-            }
 
-            Spacer()
+                Spacer()
 
-            // Volume Pill
-            GlassPanel {
-                HStack(spacing: Pill.volSpacing) {
-                    Text("\(Int(viewModel.systemVolume * 100))%")
-                        .font(.system(size: Pill.volTextSize).monospacedDigit())
-                        .foregroundStyle(.secondary)
+                // Volume Pill
+                GlassPanel {
+                    HStack(spacing: Pill.volSpacing) {
+                        Text("\(Int(viewModel.systemVolume * 100))%")
+                            .font(.system(size: Pill.volTextSize).monospacedDigit())
+                            .foregroundStyle(.secondary)
 
-                    volumeScrubber
-                        .frame(width: Pill.volSliderW)
+                        volumeScrubber
+                            .frame(width: Pill.volSliderW)
 
-                    Image(systemName: "speaker.wave.3.fill")
-                        .font(.system(size: Pill.volTextSize))
-                        .foregroundStyle(.secondary)
+                        Image(systemName: "speaker.wave.3.fill")
+                            .font(.system(size: Pill.volTextSize))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, Pill.hPad)
+                    .padding(.vertical, Pill.vPad)
                 }
-                .padding(.horizontal, Pill.hPad)
-                .padding(.vertical, Pill.vPad)
             }
         }
         .padding(.horizontal, 40)
