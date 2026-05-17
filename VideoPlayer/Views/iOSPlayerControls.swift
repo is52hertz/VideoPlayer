@@ -1,5 +1,6 @@
 #if os(iOS)
 import SwiftUI
+import MediaPlayer
 
 struct iOSPlayerControls: View {
     @Environment(PlayerViewModel.self) private var viewModel
@@ -11,6 +12,7 @@ struct iOSPlayerControls: View {
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
     @State private var isScrubbing = false
+    @State private var systemVolume = SystemVolumeManager.shared
 
     var body: some View {
         if isPhone {
@@ -25,6 +27,11 @@ struct iOSPlayerControls: View {
     private var iPhoneOverlay: some View {
         ZStack {
             vignette
+            
+            VolumeViewWrapper()
+                .frame(width: 0, height: 0)
+                .opacity(0.001)
+                .accessibilityHidden(true)
 
             VStack(spacing: 0) {
                 // Top bar: close / utilities / volume
@@ -49,11 +56,13 @@ struct iOSPlayerControls: View {
                         Text(viewModel.videoTitle)
                             .font(.headline)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 40)
+                            .safeAreaPadding(.horizontal)
                     }
                     
                     progressRow
                         .padding(.horizontal, 20)
+                        .safeAreaPadding(.horizontal)
                         .padding(.bottom, isLandscape ? 8 : 16)
                         .safeAreaPadding(.bottom)
                 }
@@ -109,10 +118,10 @@ struct iOSPlayerControls: View {
             // Volume Pill
             GlassPanel {
                 HStack(spacing: 10) {
-                    Text("\(Int(viewModel.volume * 100))%")
+                    Text("\(Int(systemVolume.volume * 100))%")
                         .font(.system(size: 12).monospacedDigit())
 
-                    GlassSlider(value: $viewModel.volume, range: 0...1)
+                    volumeScrubber
                         .frame(width: 70)
 
                     Image(systemName: "speaker.wave.3.fill")
@@ -122,7 +131,8 @@ struct iOSPlayerControls: View {
                 .padding(.vertical, 6)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 40)
+        .safeAreaPadding(.horizontal)
         .environment(\.colorScheme, .dark) // Forces dark glass to ensure unified appearance
     }
 
@@ -140,7 +150,7 @@ struct iOSPlayerControls: View {
                             Image(systemName: "speaker.wave.2.fill")
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
-                            GlassSlider(value: $viewModel.volume, range: 0...1)
+                            volumeScrubber
                                 .frame(width: 100)
                         }
 
@@ -278,6 +288,32 @@ struct iOSPlayerControls: View {
         .frame(height: 28)
     }
 
+    private var volumeScrubber: some View {
+        GeometryReader { geo in
+            VStack {
+                Spacer()
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(.white.opacity(0.3))
+                        .frame(height: 6)
+                    Capsule()
+                        .fill(.white)
+                        .frame(width: geo.size.width * CGFloat(systemVolume.volume), height: 6)
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let v = max(0, min(1, value.location.x / geo.size.width))
+                        systemVolume.volume = Float(v)
+                    }
+            )
+        }
+        .frame(height: 28)
+    }
+
     private var vignette: some View {
         ZStack {
             // Top darkening zone
@@ -320,5 +356,41 @@ struct iOSPlayerControls: View {
         if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
         return String(format: "%d:%02d", m, s)
     }
+}
+
+struct VolumeViewWrapper: UIViewRepresentable {
+    func makeUIView(context: Context) -> MediaPlayer.MPVolumeView {
+        let view = MediaPlayer.MPVolumeView(frame: .zero)
+        view.alpha = 0.001
+        return view
+    }
+    func updateUIView(_ uiView: MediaPlayer.MPVolumeView, context: Context) {}
+}
+
+// MARK: - Previews
+
+private func makePreviewVM() -> PlayerViewModel {
+    let vm = PlayerViewModel()
+    vm.videoTitle = "测试Inception.2010.4K.mkv"
+    vm.currentTime = 3_723   // 1h 2m 3s
+    vm.duration    = 8_940   // ~2h 29m
+    vm.state       = .paused
+    return vm
+}
+
+#Preview("iPhone Portrait") {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        iOSPlayerControls()
+    }
+    .environment(makePreviewVM())
+}
+
+#Preview("iPhone Landscape", traits: .landscapeLeft) {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        iOSPlayerControls()
+    }
+    .environment(makePreviewVM())
 }
 #endif
