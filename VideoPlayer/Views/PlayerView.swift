@@ -3,8 +3,10 @@ import UniformTypeIdentifiers
 
 struct PlayerView: View {
     @Environment(PlayerViewModel.self) private var viewModel
+    #if os(macOS)
     @State private var controlOffset: CGSize = .zero
     @State private var dragStartOffset: CGSize = .zero
+    #endif
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -22,12 +24,18 @@ struct PlayerView: View {
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        #if os(macOS)
                         viewModel.handleVideoTap()
+                        #else
+                        viewModel.handleVideoTapIOS()
+                        #endif
                     }
 
                 // Controls overlay — always in hierarchy, opacity fades
                 controlsOverlay
+                    #if os(macOS)
                     .offset(controlOffset)
+                    #endif
                     .opacity(viewModel.isControlsVisible ? 1 : 0)
                     .allowsHitTesting(viewModel.isControlsVisible)
                     .animation(.easeInOut(duration: 0.3), value: viewModel.isControlsVisible)
@@ -58,6 +66,16 @@ struct PlayerView: View {
 
     @ViewBuilder
     private var controlsOverlay: some View {
+        #if os(macOS)
+        macOSControlsOverlay
+        #else
+        iOSPlayerControls()
+        #endif
+    }
+
+    #if os(macOS)
+    @ViewBuilder
+    private var macOSControlsOverlay: some View {
         @Bindable var viewModel = viewModel
         VStack {
             Spacer()
@@ -158,6 +176,7 @@ struct PlayerView: View {
             .padding(.bottom, 40)
         }
     }
+    #endif
 
     private var playPauseIcon: String {
         switch viewModel.state {

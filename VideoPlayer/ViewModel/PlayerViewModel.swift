@@ -224,7 +224,18 @@ final class PlayerViewModel {
         withAnimation(.easeInOut(duration: 0.3)) {
             isControlsVisible.toggle()
         }
-        
+
+        if isControlsVisible {
+            scheduleAutoHide()
+        } else {
+            autoHideTask?.cancel()
+        }
+    }
+
+    func handleVideoTapIOS() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isControlsVisible.toggle()
+        }
         if isControlsVisible {
             scheduleAutoHide()
         } else {
