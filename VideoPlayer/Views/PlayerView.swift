@@ -20,6 +20,10 @@ struct PlayerView: View {
                 .ignoresSafeArea()
                 #endif
 
+                #if os(iOS)
+                Color.black.ignoresSafeArea()
+                #endif
+
                 VideoSurfaceView(engine: viewModel.engine)
                     .ignoresSafeArea()
                     .contentShape(Rectangle())

@@ -10,6 +10,8 @@ struct iOSPlayerControls: View {
     // iPhone landscape: vertical size class is compact regardless of model
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
+    @State private var isScrubbing = false
+
     var body: some View {
         if isPhone {
             iPhoneOverlay
@@ -25,8 +27,8 @@ struct iOSPlayerControls: View {
             vignette
 
             VStack(spacing: 0) {
-                // Top placeholder area — future: close / subtitle / volume
-                Color.clear
+                // Top bar: close / utilities / volume
+                topBar
                     .frame(height: isLandscape ? 44 : 56)
                     .safeAreaPadding(.top)
 
@@ -41,14 +43,88 @@ struct iOSPlayerControls: View {
 
                 Spacer()
 
-                // Bottom: progress scrubber — pinned to bottom edge
-                progressRow
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, isLandscape ? 8 : 16)
-                    .safeAreaPadding(.bottom)
+                // Bottom: title and progress scrubber — pinned to bottom edge
+                VStack(alignment: .leading, spacing: 12) {
+                    if !viewModel.videoTitle.isEmpty {
+                        Text(viewModel.videoTitle)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 20)
+                    }
+                    
+                    progressRow
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, isLandscape ? 8 : 16)
+                        .safeAreaPadding(.bottom)
+                }
             }
         }
         .ignoresSafeArea()
+    }
+
+    private var topBar: some View {
+        @Bindable var viewModel = viewModel
+        return HStack(spacing: 12) {
+            // Close button (Compact iOS-specific)
+            GlassPanel {
+                Button {
+                    viewModel.closeVideo()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+            }
+
+            // Utilities Pill
+            GlassPanel {
+                HStack(spacing: 16) {
+                    Button {
+                        // Future: handle resize
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(height: 20)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        // Future: handle PiP
+                    } label: {
+                        Image(systemName: "pip.enter")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(height: 20)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            }
+
+            Spacer()
+
+            // Volume Pill
+            GlassPanel {
+                HStack(spacing: 10) {
+                    Text("\(Int(viewModel.volume * 100))%")
+                        .font(.system(size: 12).monospacedDigit())
+                        .foregroundStyle(.secondary)
+
+                    GlassSlider(value: $viewModel.volume, range: 0...1)
+                        .frame(width: 70)
+
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            }
+        }
+        .padding(.horizontal, 20)
     }
 
     // MARK: - iPad: GlassPanel (single glass layer, plain buttons inside)
@@ -172,26 +248,31 @@ struct iOSPlayerControls: View {
     private var progressScrubber: some View {
         let duration = max(viewModel.duration, 1)
         let progress = viewModel.currentTime / duration
+        let barHeight: CGFloat = isScrubbing ? 12 : 6
         return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(.white.opacity(0.3))
-                    .frame(height: 3)
-                Capsule()
-                    .fill(.white)
-                    .frame(width: geo.size.width * progress, height: 3)
-                Circle()
-                    .fill(.white)
-                    .frame(width: 12, height: 12)
-                    .shadow(color: .black.opacity(0.2), radius: 2)
-                    .offset(x: max(0, geo.size.width * progress - 6))
+            VStack {
+                Spacer()
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(.white.opacity(0.3))
+                        .frame(height: barHeight)
+                    Capsule()
+                        .fill(.white)
+                        .frame(width: geo.size.width * progress, height: barHeight)
+                }
+                Spacer()
             }
+            .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: isScrubbing)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        isScrubbing = true
                         let t = max(0, min(duration, (value.location.x / geo.size.width) * duration))
                         viewModel.seek(to: t)
+                    }
+                    .onEnded { _ in
+                        isScrubbing = false
                     }
             )
         }

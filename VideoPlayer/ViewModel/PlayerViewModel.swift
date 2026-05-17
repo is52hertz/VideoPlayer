@@ -83,6 +83,15 @@ final class PlayerViewModel {
         }
     }
 
+    func closeVideo() {
+        engine.reset()
+        videoURL = nil
+        videoTitle = ""
+        currentTime = 0
+        duration = 0
+        state = .idle
+    }
+
     func togglePlayPause() {
         switch state {
         case .ready, .paused, .finished:
