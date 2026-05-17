@@ -29,6 +29,13 @@ final class PlayerViewModel {
         set { engine.volume = Float(newValue) }
     }
 
+    #if os(iOS)
+    var systemVolume: Float {
+        get { SystemVolumeManager.shared.volume }
+        set { SystemVolumeManager.shared.volume = newValue }
+    }
+    #endif
+
     var isHovering = false {
         didSet { handleHoverChange() }
     }

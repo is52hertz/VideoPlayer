@@ -12,14 +12,23 @@ struct iOSPlayerControls: View {
     private var isLandscape: Bool { verticalSizeClass == .compact }
 
     @State private var isScrubbing = false
-    @State private var systemVolume = SystemVolumeManager.shared
+    @State private var isVolumeScrubbing = false
 
     var body: some View {
-        if isPhone {
-            iPhoneOverlay
-        } else {
-            iPadOverlay
+        ZStack {
+            // MPVolumeView must stay in hierarchy at all times for hardware buttons to work on both iPhone and iPad
+            VolumeViewWrapper()
+                .frame(width: 0, height: 0)
+                .opacity(0.001)
+                .accessibilityHidden(true)
+
+            if isPhone {
+                iPhoneOverlay
+            } else {
+                iPadOverlay
+            }
         }
+        .environment(\.colorScheme, .dark)
     }
 
     // MARK: - iPhone: distributed overlay (Infuse-style)
@@ -27,11 +36,6 @@ struct iOSPlayerControls: View {
     private var iPhoneOverlay: some View {
         ZStack {
             vignette
-            
-            VolumeViewWrapper()
-                .frame(width: 0, height: 0)
-                .opacity(0.001)
-                .accessibilityHidden(true)
 
             VStack(spacing: 0) {
                 // Top bar: close / utilities / volume
@@ -59,7 +63,7 @@ struct iOSPlayerControls: View {
                             .padding(.horizontal, 40)
                             .safeAreaPadding(.horizontal)
                     }
-                    
+
                     progressRow
                         .padding(.horizontal, 20)
                         .safeAreaPadding(.horizontal)
@@ -72,8 +76,7 @@ struct iOSPlayerControls: View {
     }
 
     private var topBar: some View {
-        @Bindable var viewModel = viewModel
-        return HStack(spacing: 12) {
+        HStack(spacing: 12) {
             // Close button (Compact iOS-specific)
             GlassPanel {
                 Button {
@@ -118,14 +121,16 @@ struct iOSPlayerControls: View {
             // Volume Pill
             GlassPanel {
                 HStack(spacing: 10) {
-                    Text("\(Int(systemVolume.volume * 100))%")
+                    Text("\(Int(viewModel.systemVolume * 100))%")
                         .font(.system(size: 12).monospacedDigit())
+                        .foregroundStyle(.secondary)
 
                     volumeScrubber
                         .frame(width: 70)
 
                     Image(systemName: "speaker.wave.3.fill")
                         .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -133,14 +138,12 @@ struct iOSPlayerControls: View {
         }
         .padding(.horizontal, 40)
         .safeAreaPadding(.horizontal)
-        .environment(\.colorScheme, .dark) // Forces dark glass to ensure unified appearance
     }
 
     // MARK: - iPad: GlassPanel (single glass layer, plain buttons inside)
 
     private var iPadOverlay: some View {
-        @Bindable var viewModel = viewModel
-        return VStack {
+        VStack {
             Spacer()
             GlassPanel {
                 VStack(spacing: 12) {
@@ -289,25 +292,31 @@ struct iOSPlayerControls: View {
     }
 
     private var volumeScrubber: some View {
-        GeometryReader { geo in
+        let barHeight: CGFloat = isVolumeScrubbing ? 12 : 6
+        return GeometryReader { geo in
             VStack {
                 Spacer()
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(.white.opacity(0.3))
-                        .frame(height: 6)
+                        .frame(height: barHeight)
                     Capsule()
                         .fill(.white)
-                        .frame(width: geo.size.width * CGFloat(systemVolume.volume), height: 6)
+                        .frame(width: geo.size.width * CGFloat(viewModel.systemVolume), height: barHeight)
                 }
                 Spacer()
             }
+            .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: isVolumeScrubbing)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        isVolumeScrubbing = true
                         let v = max(0, min(1, value.location.x / geo.size.width))
-                        systemVolume.volume = Float(v)
+                        viewModel.systemVolume = Float(v)
+                    }
+                    .onEnded { _ in
+                        isVolumeScrubbing = false
                     }
             )
         }

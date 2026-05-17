@@ -52,7 +52,7 @@ final class SystemVolumeManager {
     
     private func setSystemVolume(_ newVolume: Float) {
         guard let slider = volumeSlider else { return }
-        DispatchQueue.main.async {
+        Task { @MainActor in
             if abs(slider.value - newVolume) > 0.01 {
                 slider.value = newVolume
             }
