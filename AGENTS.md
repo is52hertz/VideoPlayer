@@ -88,4 +88,4 @@ Trigger: Views, Glass primitives, layout, materials, motion, gestures, controls.
 ### MCP Tool Triggers
 - **Playback / ViewModel bugs:** LLDB (`debug_attach_sim` …) over `print`.
 - **`Engine/` or `ViewModel/` changes:** `test_sim` → `get_coverage_report` / `get_file_coverage`.
-- **Significant UI changes** (new screen, major layout, new interactive component): `build_run_sim` → `screenshot` → interact → `screenshot` → HIG Doctor on screenshots. Skip color/spacing/copy tweaks.
+- **Significant UI changes** (new screen, major layout, new interactive component): `build_run_sim` (launch simulator for manual testing only). No screenshot/interact unless user requests — player UI requires a loaded video file. HIG Doctor: code review, not screenshot-driven. Skip color/spacing/copy tweaks.
