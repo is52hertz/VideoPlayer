@@ -15,5 +15,32 @@
   },
   "enabledPlugins": {
     "swiftui-pro@swiftui-agent-skill": true
+  },
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(/Users/is52hertz/Documents/Projects/VideoPlayer/**)",
+      "Edit(/Users/is52hertz/Documents/Projects/VideoPlayer/**)",
+      "Bash(git diff*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git -C * commit*)",
+      "Bash(git stash list*)",
+      "Bash(git config*)",
+      "Bash(xcodebuild*)",
+      "Bash(xcrun simctl*)",
+      "Bash(claude plugin*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.claudepluginhub.com)",
+      "mcp__XcodeBuildMCP__*",
+      "mcp__xcode__*",
+      "Skill(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)"
+    ]
   }
 }
