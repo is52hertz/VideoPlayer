@@ -12,38 +12,43 @@ struct PlayerView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
         GeometryReader { geometry in
+            #if os(iOS)
             ZStack {
-                #if os(macOS)
+                Color.black.ignoresSafeArea()
+
+                VideoSurfaceView(engine: viewModel.engine)
+                    .ignoresSafeArea()
+
+                controlsOverlay
+                    .opacity(viewModel.isControlsVisible ? 1 : 0)
+                    .allowsHitTesting(viewModel.isControlsVisible)
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.isControlsVisible)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                viewModel.handleVideoTapIOS()
+            }
+            #else
+            ZStack {
                 WindowTrackerView(isVisible: Binding(get: { viewModel.isControlsVisible }, set: { _ in }), onHover: { hovering in
                     viewModel.isHovering = hovering
                 })
                 .ignoresSafeArea()
-                #endif
-
-                #if os(iOS)
-                Color.black.ignoresSafeArea()
-                #endif
 
                 VideoSurfaceView(engine: viewModel.engine)
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        #if os(macOS)
                         viewModel.handleVideoTap()
-                        #else
-                        viewModel.handleVideoTapIOS()
-                        #endif
                     }
 
-                // Controls overlay — always in hierarchy, opacity fades
                 controlsOverlay
-                    #if os(macOS)
                     .offset(controlOffset)
-                    #endif
                     .opacity(viewModel.isControlsVisible ? 1 : 0)
                     .allowsHitTesting(viewModel.isControlsVisible)
                     .animation(.easeInOut(duration: 0.3), value: viewModel.isControlsVisible)
             }
+            #endif
         }
         .focusable()
         .focused($isFocused)
