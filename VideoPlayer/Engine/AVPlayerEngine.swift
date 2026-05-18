@@ -35,6 +35,9 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
 
     override init() {
         super.init()
+        // QA1820 trade-off: disables AVPlayer's buffer-pause heuristic to keep
+        // scrub seeks low-latency. Safe for local files; re-enable (set true)
+        // if/when this engine is used for network/HLS streams.
         player.automaticallyWaitsToMinimizeStalling = false
         setupTimeObserver()
     }
@@ -46,6 +49,9 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
     func load(url: URL) {
         teardownItemObservers()
         let newItem = AVPlayerItem(url: url)
+        // QA1820 trade-off: tiny forward buffer keeps post-seek latency low.
+        // Fine for local files; raise (e.g. 5–10) for network playback where
+        // bandwidth dips need headroom.
         newItem.preferredForwardBufferDuration = 1
         item = newItem
         player.replaceCurrentItem(with: newItem)
@@ -74,6 +80,12 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
         guard !isSeekInProgress, chaseTime.isValid, player.currentItem != nil else { return }
         let target = chaseTime
         isSeekInProgress = true
+        // QA1820 trade-off: infinite tolerance snaps to the nearest already-
+        // decoded sync sample (I-frame), so during a drag only I-frames
+        // appear — mid-GOP frames are skipped. Acceptable because the View
+        // calls `seek(to:)` (zero tolerance) on release to land the exact
+        // frame. Do NOT lower tolerance here without also accepting the
+        // multi-frame latency that returns.
         player.seek(
             to: target,
             toleranceBefore: .positiveInfinity,

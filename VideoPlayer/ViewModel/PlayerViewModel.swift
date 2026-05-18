@@ -42,6 +42,13 @@ final class PlayerViewModel {
 
     /// True while the user is actively dragging a scrubber or otherwise
     /// engaged with the controls. Suspends auto-hide for the duration.
+    ///
+    /// Overloaded flag: this also gates `engine.onTimeUpdate` writes (see
+    /// `setupEngineCallbacks`) so the periodic time observer doesn't stomp
+    /// the chase-pattern's forward-projected `currentTime`. If a future
+    /// feature needs one responsibility without the other (e.g. show live
+    /// engine time during a non-scrub interaction), split this into two
+    /// flags rather than reusing this one.
     var isInteractingWithControls = false {
         didSet { handleInteractionChange() }
     }
@@ -61,6 +68,12 @@ final class PlayerViewModel {
 
     private func setupEngineCallbacks() {
         engine.onTimeUpdate = { [weak self] time in
+            // Suppress engine-truth writes during scrub / inertia so the
+            // 0.5 s periodic observer doesn't overwrite the chase-pattern's
+            // forward-projected `currentTime`. Side-effect: if a seek
+            // errors mid-drag, the UI position will not self-correct until
+            // interaction ends and the final `seek(to:)` commit lands.
+            // Acceptable under QA1820 — be aware before refactoring.
             guard let self, !self.isInteractingWithControls else { return }
             self.currentTime = time
         }
