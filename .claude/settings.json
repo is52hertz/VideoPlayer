@@ -33,6 +33,7 @@
       "Bash(xcodebuild*)",
       "Bash(xcrun simctl*)",
       "Bash(claude plugin*)",
+      "Bash(find *)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.claudepluginhub.com)",
       "mcp__XcodeBuildMCP__*",
