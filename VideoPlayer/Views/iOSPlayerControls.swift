@@ -21,6 +21,9 @@ struct iOSPlayerControls: View {
 
     private var isScrubActive: Bool { isScrubbing || isFlinging }
 
+    private var timeLabelSize: CGFloat { isScrubActive ? 16 : 12 }
+    private var timeLabelMinWidth: CGFloat { isScrubActive ? 56 : 42 }
+
     var body: some View {
         ZStack {
             // MPVolumeView must stay in hierarchy at all times for hardware buttons to work.
@@ -196,19 +199,20 @@ struct iOSPlayerControls: View {
     }
 
     private var progressRow: some View {
-        HStack(spacing: 10) {
-            Text(formatTime(viewModel.currentTime))
-                .font(.system(size: 12).monospacedDigit())
+        let hasDuration = viewModel.duration > 0
+        return HStack(spacing: 10) {
+            Text(formatTime(viewModel.currentTime, placeholder: !hasDuration))
+                .font(.system(size: timeLabelSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
-                .frame(minWidth: 42, alignment: .trailing)
+                .frame(minWidth: timeLabelMinWidth, alignment: .trailing)
                 .allowsHitTesting(false)
 
             progressScrubber
 
-            Text(formatTime(viewModel.duration))
-                .font(.system(size: 12).monospacedDigit())
+            Text(formatTime(viewModel.duration, placeholder: !hasDuration))
+                .font(.system(size: timeLabelSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
-                .frame(minWidth: 42, alignment: .leading)
+                .frame(minWidth: timeLabelMinWidth, alignment: .leading)
                 .allowsHitTesting(false)
         }
     }
@@ -372,8 +376,9 @@ struct iOSPlayerControls: View {
         viewModel.state == .playing ? "pause.fill" : "play.fill"
     }
 
-    private func formatTime(_ seconds: TimeInterval) -> String {
-        guard seconds.isFinite, seconds >= 0 else { return "0:00" }
+    private func formatTime(_ seconds: TimeInterval, placeholder: Bool = false) -> String {
+        if placeholder { return "--:--" }
+        guard seconds.isFinite, seconds >= 0 else { return "--:--" }
         let total = Int(seconds)
         let h = total / 3600
         let m = (total % 3600) / 60
