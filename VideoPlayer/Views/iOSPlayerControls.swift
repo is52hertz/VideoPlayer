@@ -14,6 +14,10 @@ struct iOSPlayerControls: View {
     @State private var dragStartTime: TimeInterval?
     @State private var lastDragX: CGFloat?
     @State private var accumulatedSeek: TimeInterval = 0
+    @State private var isFlinging = false
+    @State private var inertiaTask: Task<Void, Never>?
+
+    private var isScrubActive: Bool { isScrubbing || isFlinging }
 
     var body: some View {
         ZStack {
@@ -24,15 +28,18 @@ struct iOSPlayerControls: View {
                 .accessibilityHidden(true)
 
             vignette
+                .opacity(isScrubActive ? 0 : 1)
 
             VStack(spacing: 0) {
                 topBar
                     .padding(.top, isCompactHeight ? 8 : 12)
                     .safeAreaPadding(.top)
+                    .opacity(isScrubActive ? 0 : 1)
 
                 Spacer()
 
                 playbackButtons
+                    .opacity(isScrubActive ? 0 : 1)
 
                 Spacer()
 
@@ -40,6 +47,7 @@ struct iOSPlayerControls: View {
             }
         }
         .ignoresSafeArea()
+        .animation(.easeInOut(duration: 0.25), value: isScrubActive)
     }
 
     // MARK: - Top bar
@@ -157,6 +165,7 @@ struct iOSPlayerControls: View {
                     .padding(.horizontal, isPad ? 56 : 40)
                     .safeAreaPadding(.horizontal)
                     .allowsHitTesting(false)
+                    .opacity(isScrubActive ? 0 : 1)
             }
 
             progressRow
@@ -209,32 +218,69 @@ struct iOSPlayerControls: View {
                     .updating($isScrubbing) { _, state, _ in state = true }
                     .onChanged { value in
                         guard let startTime = dragStartTime, let lastX = lastDragX else {
+                            inertiaTask?.cancel()
+                            isFlinging = false
                             dragStartTime = viewModel.currentTime
                             lastDragX = value.location.x
                             accumulatedSeek = 0
                             return
                         }
                         let dx = value.location.x - lastX
-                        let y = value.location.y
-                        let h = UIScreen.main.bounds.height
-                        let speed: Double
-                        if y < h / 2 { speed = 0.2 }
-                        else if y < h * 3 / 4 { speed = 0.5 }
-                        else { speed = 1.0 }
+                        let speed = scrubSpeed(forY: value.location.y)
                         accumulatedSeek += (dx / geo.size.width) * duration * speed
                         lastDragX = value.location.x
                         viewModel.seek(to: max(0, min(duration, startTime + accumulatedSeek)))
                     }
+                    .onEnded { value in
+                        let vx = Double(value.velocity.width)
+                        guard abs(vx) > 200 else {
+                            clearScrubState()
+                            return
+                        }
+                        let speed = scrubSpeed(forY: value.location.y)
+                        let base = (dragStartTime ?? viewModel.currentTime) + accumulatedSeek
+                        startInertia(velocity: vx, base: base, speed: speed, width: geo.size.width, duration: duration)
+                    }
             )
         }
         .frame(height: 28)
-        .onChange(of: isScrubbing) { _, scrubbing in
-            viewModel.isInteractingWithControls = scrubbing
-            if !scrubbing {
-                dragStartTime = nil
-                lastDragX = nil
-                accumulatedSeek = 0
+        .onChange(of: isScrubActive) { _, active in
+            viewModel.isInteractingWithControls = active
+        }
+    }
+
+    private func scrubSpeed(forY y: CGFloat) -> Double {
+        let h = UIScreen.main.bounds.height
+        if y < h / 2 { return 0.2 }
+        if y < h * 3 / 4 { return 0.5 }
+        return 1.0
+    }
+
+    private func clearScrubState() {
+        dragStartTime = nil
+        lastDragX = nil
+        accumulatedSeek = 0
+        isFlinging = false
+    }
+
+    private func startInertia(velocity: Double, base: TimeInterval, speed: Double, width: CGFloat, duration: TimeInterval) {
+        inertiaTask?.cancel()
+        isFlinging = true
+        let w = Double(width)
+        inertiaTask = Task { @MainActor in
+            var v = velocity
+            var t = base
+            let decayPerSec = 3.5
+            let frame = 1.0 / 60.0
+            while abs(v) > 80 {
+                if Task.isCancelled { return }
+                let dx = v * frame
+                t = max(0, min(duration, t + (dx / w) * duration * speed))
+                viewModel.seek(to: t)
+                v *= exp(-decayPerSec * frame)
+                try? await Task.sleep(for: .milliseconds(16))
             }
+            clearScrubState()
         }
     }
 
