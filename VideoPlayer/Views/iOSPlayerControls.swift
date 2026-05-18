@@ -9,8 +9,11 @@ struct iOSPlayerControls: View {
     private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
     private var isCompactHeight: Bool { verticalSizeClass == .compact }
 
-    @State private var isScrubbing = false
-    @State private var isVolumeScrubbing = false
+    @GestureState private var isScrubbing = false
+    @GestureState private var isVolumeScrubbing = false
+    @State private var dragStartTime: TimeInterval?
+    @State private var lastDragX: CGFloat?
+    @State private var accumulatedSeek: TimeInterval = 0
 
     var body: some View {
         ZStack {
@@ -159,7 +162,7 @@ struct iOSPlayerControls: View {
             progressRow
                 .padding(.horizontal, isPad ? 32 : 20)
                 .safeAreaPadding(.horizontal)
-                .padding(.bottom, isCompactHeight ? 8 : 16)
+                .padding(.bottom, isCompactHeight ? 20 : 32)
                 .safeAreaPadding(.bottom)
         }
     }
@@ -202,22 +205,37 @@ struct iOSPlayerControls: View {
             .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: isScrubbing)
             .contentShape(Rectangle())
             .highPriorityGesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                    .updating($isScrubbing) { _, state, _ in state = true }
                     .onChanged { value in
-                        if !isScrubbing {
-                            isScrubbing = true
-                            viewModel.isInteractingWithControls = true
+                        guard let startTime = dragStartTime, let lastX = lastDragX else {
+                            dragStartTime = viewModel.currentTime
+                            lastDragX = value.location.x
+                            accumulatedSeek = 0
+                            return
                         }
-                        let t = max(0, min(duration, (value.location.x / geo.size.width) * duration))
-                        viewModel.seek(to: t)
-                    }
-                    .onEnded { _ in
-                        isScrubbing = false
-                        viewModel.isInteractingWithControls = false
+                        let dx = value.location.x - lastX
+                        let y = value.location.y
+                        let h = UIScreen.main.bounds.height
+                        let speed: Double
+                        if y < h / 2 { speed = 0.2 }
+                        else if y < h * 3 / 4 { speed = 0.5 }
+                        else { speed = 1.0 }
+                        accumulatedSeek += (dx / geo.size.width) * duration * speed
+                        lastDragX = value.location.x
+                        viewModel.seek(to: max(0, min(duration, startTime + accumulatedSeek)))
                     }
             )
         }
         .frame(height: 28)
+        .onChange(of: isScrubbing) { _, scrubbing in
+            viewModel.isInteractingWithControls = scrubbing
+            if !scrubbing {
+                dragStartTime = nil
+                lastDragX = nil
+                accumulatedSeek = 0
+            }
+        }
     }
 
     private var volumeScrubber: some View {
@@ -239,21 +257,17 @@ struct iOSPlayerControls: View {
             .contentShape(Rectangle())
             .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
+                    .updating($isVolumeScrubbing) { _, state, _ in state = true }
                     .onChanged { value in
-                        if !isVolumeScrubbing {
-                            isVolumeScrubbing = true
-                            viewModel.isInteractingWithControls = true
-                        }
                         let v = max(0, min(1, value.location.x / geo.size.width))
                         viewModel.systemVolume = Float(v)
-                    }
-                    .onEnded { _ in
-                        isVolumeScrubbing = false
-                        viewModel.isInteractingWithControls = false
                     }
             )
         }
         .frame(height: 28)
+        .onChange(of: isVolumeScrubbing) { _, scrubbing in
+            viewModel.isInteractingWithControls = scrubbing
+        }
     }
 
     private var vignette: some View {
