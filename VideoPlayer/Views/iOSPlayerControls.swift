@@ -21,8 +21,13 @@ struct iOSPlayerControls: View {
 
     private var isScrubActive: Bool { isScrubbing || isFlinging }
 
-    private var timeLabelSize: CGFloat { isScrubActive ? 16 : 12 }
-    private var timeLabelMinWidth: CGFloat { isScrubActive ? 56 : 42 }
+    // Scale visually from center via `.scaleEffect` so the bar isn't
+    // squeezed inward — the text frame keeps its base width, and the
+    // 16/12 magnification overflows symmetrically (outward + inward).
+    // Gives an Apple-TV-style "lift" feel rather than a layout reflow.
+    private static let timeLabelBaseSize: CGFloat = 12
+    private static let timeLabelActiveScale: CGFloat = 16.0 / 12.0
+    private var timeLabelScale: CGFloat { isScrubActive ? Self.timeLabelActiveScale : 1.0 }
 
     var body: some View {
         ZStack {
@@ -202,17 +207,19 @@ struct iOSPlayerControls: View {
         let hasDuration = viewModel.duration > 0
         return HStack(spacing: 10) {
             Text(formatTime(viewModel.currentTime, placeholder: !hasDuration))
-                .font(.system(size: timeLabelSize).monospacedDigit())
+                .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
-                .frame(minWidth: timeLabelMinWidth, alignment: .trailing)
+                .frame(minWidth: 42, alignment: .trailing)
+                .scaleEffect(timeLabelScale, anchor: .center)
                 .allowsHitTesting(false)
 
             progressScrubber
 
             Text(formatTime(viewModel.duration, placeholder: !hasDuration))
-                .font(.system(size: timeLabelSize).monospacedDigit())
+                .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
-                .frame(minWidth: timeLabelMinWidth, alignment: .leading)
+                .frame(minWidth: 42, alignment: .leading)
+                .scaleEffect(timeLabelScale, anchor: .center)
                 .allowsHitTesting(false)
         }
     }
