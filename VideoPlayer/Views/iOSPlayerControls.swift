@@ -16,6 +16,7 @@ struct iOSPlayerControls: View {
     @State private var accumulatedSeek: TimeInterval = 0
     @State private var isFlinging = false
     @State private var inertiaTask: Task<Void, Never>?
+    @State private var lastZone: Int?
 
     private var isScrubActive: Bool { isScrubbing || isFlinging }
 
@@ -34,12 +35,10 @@ struct iOSPlayerControls: View {
                 topBar
                     .padding(.top, isCompactHeight ? 8 : 12)
                     .safeAreaPadding(.top)
-                    .opacity(isScrubActive ? 0 : 1)
 
                 Spacer()
 
                 playbackButtons
-                    .opacity(isScrubActive ? 0 : 1)
 
                 Spacer()
 
@@ -47,7 +46,7 @@ struct iOSPlayerControls: View {
             }
         }
         .ignoresSafeArea()
-        .animation(.easeInOut(duration: 0.25), value: isScrubActive)
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isScrubActive)
     }
 
     // MARK: - Top bar
@@ -73,10 +72,13 @@ struct iOSPlayerControls: View {
             .font(.system(size: isPad ? 18 : 16, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
+            .opacity(isScrubActive ? 0 : 1)
             .padding(.horizontal, isPad ? 14 : 12)
             .padding(.vertical, isPad ? 10 : 8)
             .contentShape(Capsule())
             .glassEffect(.clear.interactive(), in: Capsule())
+            .scaleEffect(isScrubActive ? 0.6 : 1.0)
+            .opacity(isScrubActive ? 0 : 1)
             .onTapGesture { action() }
             .accessibilityAddTraits(.isButton)
     }
@@ -91,6 +93,8 @@ struct iOSPlayerControls: View {
             }
         }
         .glassEffect(.clear.interactive(), in: Capsule())
+        .scaleEffect(isScrubActive ? 0.6 : 1.0)
+        .opacity(isScrubActive ? 0 : 1)
     }
 
     private func utilityIconButton(systemName: String, action: @escaping () -> Void) -> some View {
@@ -98,6 +102,7 @@ struct iOSPlayerControls: View {
             .font(.system(size: isPad ? 18 : 16, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
+            .opacity(isScrubActive ? 0 : 1)
             .padding(.horizontal, isPad ? 14 : 12)
             .padding(.vertical, isPad ? 10 : 8)
             .contentShape(Rectangle())
@@ -110,17 +115,22 @@ struct iOSPlayerControls: View {
             Text("\(Int(viewModel.systemVolume * 100))%")
                 .font(.system(size: 12).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.85))
+                .opacity(isScrubActive ? 0 : 1)
 
             volumeScrubber
                 .frame(width: isPad ? 110 : 70)
+                .opacity(isScrubActive ? 0 : 1)
 
             Image(systemName: "speaker.wave.3.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.85))
+                .opacity(isScrubActive ? 0 : 1)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .glassEffect(.clear.interactive(), in: Capsule())
+        .scaleEffect(isScrubActive ? 0.6 : 1.0)
+        .opacity(isScrubActive ? 0 : 1)
     }
 
     // MARK: - Playback (center)
@@ -146,10 +156,13 @@ struct iOSPlayerControls: View {
             .font(.system(size: size, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: size + 24, height: size + 24)
+            .opacity(isScrubActive ? 0 : 1)
             .padding(.horizontal, isPad ? 16 : 12)
             .padding(.vertical, isPad ? 14 : 10)
             .contentShape(Capsule())
             .glassEffect(.clear.interactive(), in: Capsule())
+            .scaleEffect(isScrubActive ? 0.6 : 1.0)
+            .opacity(isScrubActive ? 0 : 1)
             .onTapGesture { action() }
             .accessibilityAddTraits(.isButton)
     }
@@ -223,21 +236,27 @@ struct iOSPlayerControls: View {
                             dragStartTime = viewModel.currentTime
                             lastDragX = value.location.x
                             accumulatedSeek = 0
+                            lastZone = scrubZone(forY: value.location.y)
                             return
                         }
                         let dx = value.location.x - lastX
-                        let speed = scrubSpeed(forY: value.location.y)
+                        let zone = scrubZone(forY: value.location.y)
+                        if let prev = lastZone, prev != zone {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                        lastZone = zone
+                        let speed = scrubSpeed(forZone: zone)
                         accumulatedSeek += (dx / geo.size.width) * duration * speed
                         lastDragX = value.location.x
                         viewModel.seek(to: max(0, min(duration, startTime + accumulatedSeek)))
                     }
                     .onEnded { value in
                         let vx = Double(value.velocity.width)
-                        guard abs(vx) > 200 else {
+                        guard abs(vx) > 300 else {
                             clearScrubState()
                             return
                         }
-                        let speed = scrubSpeed(forY: value.location.y)
+                        let speed = scrubSpeed(forZone: scrubZone(forY: value.location.y))
                         let base = (dragStartTime ?? viewModel.currentTime) + accumulatedSeek
                         startInertia(velocity: vx, base: base, speed: speed, width: geo.size.width, duration: duration)
                     }
@@ -249,11 +268,19 @@ struct iOSPlayerControls: View {
         }
     }
 
-    private func scrubSpeed(forY y: CGFloat) -> Double {
+    private func scrubZone(forY y: CGFloat) -> Int {
         let h = UIScreen.main.bounds.height
-        if y < h / 2 { return 0.2 }
-        if y < h * 3 / 4 { return 0.5 }
-        return 1.0
+        if y < h / 2 { return 0 }
+        if y < h * 3 / 4 { return 1 }
+        return 2
+    }
+
+    private func scrubSpeed(forZone zone: Int) -> Double {
+        switch zone {
+        case 0: return 0.2
+        case 1: return 0.5
+        default: return 1.0
+        }
     }
 
     private func clearScrubState() {
@@ -261,6 +288,7 @@ struct iOSPlayerControls: View {
         lastDragX = nil
         accumulatedSeek = 0
         isFlinging = false
+        lastZone = nil
     }
 
     private func startInertia(velocity: Double, base: TimeInterval, speed: Double, width: CGFloat, duration: TimeInterval) {
@@ -270,7 +298,7 @@ struct iOSPlayerControls: View {
         inertiaTask = Task { @MainActor in
             var v = velocity
             var t = base
-            let decayPerSec = 3.5
+            let decayPerSec = 7.0
             let frame = 1.0 / 60.0
             while abs(v) > 80 {
                 if Task.isCancelled { return }
