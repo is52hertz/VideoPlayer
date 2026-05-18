@@ -61,7 +61,8 @@ final class PlayerViewModel {
 
     private func setupEngineCallbacks() {
         engine.onTimeUpdate = { [weak self] time in
-            self?.currentTime = time
+            guard let self, !self.isInteractingWithControls else { return }
+            self.currentTime = time
         }
         engine.onDurationAvailable = { [weak self] duration in
             guard let self else { return }

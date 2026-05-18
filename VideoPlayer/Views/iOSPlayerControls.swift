@@ -300,13 +300,21 @@ struct iOSPlayerControls: View {
             var v = velocity
             var t = base
             let decayPerSec = 7.0
-            let frame = 1.0 / 60.0
+            var lastTick = Date()
             while abs(v) > 80 {
                 if Task.isCancelled { return }
-                let dx = v * frame
-                t = max(0, min(duration, t + (dx / w) * duration * speed))
+                let now = Date()
+                let dt = min(max(now.timeIntervalSince(lastTick), 0.001), 0.05)
+                lastTick = now
+                let dx = v * dt
+                let newT = max(0, min(duration, t + (dx / w) * duration * speed))
+                if newT == t || newT == 0 || newT == duration {
+                    t = newT
+                    break
+                }
+                t = newT
                 viewModel.scrub(to: t)
-                v *= exp(-decayPerSec * frame)
+                v *= exp(-decayPerSec * dt)
                 try? await Task.sleep(for: .milliseconds(16))
             }
             viewModel.seek(to: t)
