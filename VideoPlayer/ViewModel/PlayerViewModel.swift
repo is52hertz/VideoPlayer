@@ -40,6 +40,16 @@ final class PlayerViewModel {
         didSet { handleHoverChange() }
     }
 
+    /// True while the user is actively dragging a scrubber or otherwise
+    /// engaged with the controls. Suspends auto-hide for the duration.
+    var isInteractingWithControls = false {
+        didSet { handleInteractionChange() }
+    }
+
+    /// Single source of truth for how long controls stay on screen after the
+    /// last user input. Tune here.
+    private static let autoHideDelay: TimeInterval = 5.0
+
     private var autoHideTask: Task<Void, Never>?
 
     init(engine: any PlayerEngine = AVPlayerEngine()) {
@@ -259,11 +269,19 @@ final class PlayerViewModel {
         }
     }
 
+    private func handleInteractionChange() {
+        if isInteractingWithControls {
+            autoHideTask?.cancel()
+        } else {
+            scheduleAutoHide()
+        }
+    }
+
     private func scheduleAutoHide() {
         autoHideTask?.cancel()
         autoHideTask = Task {
-            try? await Task.sleep(for: .seconds(2.5))
-            guard !Task.isCancelled, !isHovering else { return }
+            try? await Task.sleep(for: .seconds(Self.autoHideDelay))
+            guard !Task.isCancelled, !isHovering, !isInteractingWithControls else { return }
             withAnimation(.easeInOut(duration: 0.3)) {
                 self.isControlsVisible = false
             }

@@ -58,20 +58,20 @@ struct iOSPlayerControls: View {
     }
 
     private func glassIconButton(systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: isPad ? 18 : 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
-                .padding(.horizontal, isPad ? 14 : 12)
-                .padding(.vertical, isPad ? 10 : 8)
-                .glassEffect(.clear.interactive(), in: Capsule())
-        }
-        .buttonStyle(.plain)
+        Image(systemName: systemName)
+            .font(.system(size: isPad ? 18 : 16, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
+            .padding(.horizontal, isPad ? 14 : 12)
+            .padding(.vertical, isPad ? 10 : 8)
+            .contentShape(Capsule())
+            .glassEffect(.clear.interactive(), in: Capsule())
+            .onTapGesture { action() }
+            .accessibilityAddTraits(.isButton)
     }
 
     private var utilityPill: some View {
-        HStack(spacing: isPad ? 18 : 14) {
+        HStack(spacing: 0) {
             utilityIconButton(systemName: "arrow.up.left.and.arrow.down.right") {
                 // Future: handle resize
             }
@@ -79,19 +79,19 @@ struct iOSPlayerControls: View {
                 // Future: handle PiP
             }
         }
-        .padding(.horizontal, isPad ? 14 : 12)
-        .padding(.vertical, isPad ? 10 : 8)
         .glassEffect(.clear.interactive(), in: Capsule())
     }
 
     private func utilityIconButton(systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: isPad ? 18 : 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
-        }
-        .buttonStyle(.plain)
+        Image(systemName: systemName)
+            .font(.system(size: isPad ? 18 : 16, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
+            .padding(.horizontal, isPad ? 14 : 12)
+            .padding(.vertical, isPad ? 10 : 8)
+            .contentShape(Rectangle())
+            .onTapGesture { action() }
+            .accessibilityAddTraits(.isButton)
     }
 
     private var volumePill: some View {
@@ -131,16 +131,16 @@ struct iOSPlayerControls: View {
     }
 
     private func glassPlaybackButton(systemName: String, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: size + 24, height: size + 24)
-                .padding(.horizontal, isPad ? 16 : 12)
-                .padding(.vertical, isPad ? 14 : 10)
-                .glassEffect(.clear.interactive(), in: Capsule())
-        }
-        .buttonStyle(.plain)
+        Image(systemName: systemName)
+            .font(.system(size: size, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: size + 24, height: size + 24)
+            .padding(.horizontal, isPad ? 16 : 12)
+            .padding(.vertical, isPad ? 14 : 10)
+            .contentShape(Capsule())
+            .glassEffect(.clear.interactive(), in: Capsule())
+            .onTapGesture { action() }
+            .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Bottom bar
@@ -204,12 +204,16 @@ struct iOSPlayerControls: View {
             .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        isScrubbing = true
+                        if !isScrubbing {
+                            isScrubbing = true
+                            viewModel.isInteractingWithControls = true
+                        }
                         let t = max(0, min(duration, (value.location.x / geo.size.width) * duration))
                         viewModel.seek(to: t)
                     }
                     .onEnded { _ in
                         isScrubbing = false
+                        viewModel.isInteractingWithControls = false
                     }
             )
         }
@@ -236,12 +240,16 @@ struct iOSPlayerControls: View {
             .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        isVolumeScrubbing = true
+                        if !isVolumeScrubbing {
+                            isVolumeScrubbing = true
+                            viewModel.isInteractingWithControls = true
+                        }
                         let v = max(0, min(1, value.location.x / geo.size.width))
                         viewModel.systemVolume = Float(v)
                     }
                     .onEnded { _ in
                         isVolumeScrubbing = false
+                        viewModel.isInteractingWithControls = false
                     }
             )
         }
