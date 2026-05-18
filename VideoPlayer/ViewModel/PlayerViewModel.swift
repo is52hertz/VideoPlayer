@@ -59,6 +59,13 @@ final class PlayerViewModel {
 
     private var autoHideTask: Task<Void, Never>?
 
+    private static let buttonSeekAnimationDuration: TimeInterval = 0.35
+    /// True while the bar is mid-ease-out from a ±15s tap. Suppresses
+    /// `onTimeUpdate` writes so the periodic observer doesn't stomp the
+    /// animated `currentTime` mid-transition.
+    private var isAnimatingButtonSeek = false
+    private var seekAnimationFlagTask: Task<Void, Never>?
+
     init(engine: any PlayerEngine = AVPlayerEngine()) {
         self.engine = engine
         setupEngineCallbacks()
@@ -70,11 +77,14 @@ final class PlayerViewModel {
         engine.onTimeUpdate = { [weak self] time in
             // Suppress engine-truth writes during scrub / inertia so the
             // 0.5 s periodic observer doesn't overwrite the chase-pattern's
-            // forward-projected `currentTime`. Side-effect: if a seek
-            // errors mid-drag, the UI position will not self-correct until
-            // interaction ends and the final `seek(to:)` commit lands.
-            // Acceptable under QA1820 — be aware before refactoring.
-            guard let self, !self.isInteractingWithControls else { return }
+            // forward-projected `currentTime`. Also suppressed during a
+            // ±15s button animation so the ease-out tween isn't stomped
+            // by the in-flight seek's mid-position. Side-effect: if a
+            // seek errors during either window, the UI position will not
+            // self-correct until the window ends. Acceptable trade-off.
+            guard let self,
+                  !self.isInteractingWithControls,
+                  !self.isAnimatingButtonSeek else { return }
             self.currentTime = time
         }
         engine.onDurationAvailable = { [weak self] duration in
@@ -159,22 +169,31 @@ final class PlayerViewModel {
     }
 
     func seekForward(_ delta: TimeInterval = 10) {
-        let clamped = min(currentTime + delta, duration)
-        engine.seek(to: clamped)
-        currentTime = clamped
-
-        if state == .finished {
-            state = .paused
-        }
+        performAnimatedSeek(to: currentTime + delta)
     }
 
     func seekBackward(_ delta: TimeInterval = 10) {
-        let clamped = max(currentTime - delta, 0)
-        engine.seek(to: clamped)
-        currentTime = clamped
+        performAnimatedSeek(to: currentTime - delta)
+    }
 
-        if state == .finished {
-            state = .paused
+    /// Video jumps to `target` immediately; the progress bar tweens to it
+    /// with an ease-out. Repeated calls retarget the in-flight animation
+    /// so consecutive ±15s taps chain smoothly.
+    private func performAnimatedSeek(to target: TimeInterval) {
+        let clamped = max(0, min(target, duration))
+        engine.seek(to: clamped)
+        if state == .finished { state = .paused }
+
+        isAnimatingButtonSeek = true
+        withAnimation(.easeOut(duration: Self.buttonSeekAnimationDuration)) {
+            currentTime = clamped
+        }
+
+        seekAnimationFlagTask?.cancel()
+        seekAnimationFlagTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.buttonSeekAnimationDuration))
+            guard let self, !Task.isCancelled else { return }
+            self.isAnimatingButtonSeek = false
         }
     }
 
