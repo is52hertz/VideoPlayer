@@ -17,6 +17,7 @@ struct iOSPlayerControls: View {
     @State private var isFlinging = false
     @State private var inertiaTask: Task<Void, Never>?
     @State private var lastZone: Int?
+    @State private var screenHeight: CGFloat = 0
 
     private var isScrubActive: Bool { isScrubbing || isFlinging }
 
@@ -46,6 +47,11 @@ struct iOSPlayerControls: View {
             }
         }
         .ignoresSafeArea()
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { newValue in
+            screenHeight = newValue
+        }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isScrubActive)
     }
 
@@ -270,7 +276,7 @@ struct iOSPlayerControls: View {
     }
 
     private func scrubZone(forY y: CGFloat) -> Int {
-        let h = UIScreen.main.bounds.height
+        let h = screenHeight > 0 ? screenHeight : 1000
         if y < h / 2 { return 0 }
         if y < h * 3 / 4 { return 1 }
         return 2

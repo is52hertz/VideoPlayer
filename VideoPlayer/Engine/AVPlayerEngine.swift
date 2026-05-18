@@ -1,14 +1,23 @@
 import AVFoundation
+import os
 
 final class AVPlayerEngine: NSObject, PlayerEngine {
+    private struct ChaseState {
+        var chaseTime: CMTime = .invalid
+        var isSeekInProgress: Bool = false
+    }
+
     private let player = AVPlayer()
     private var timeObserverToken: Any?
     private var item: AVPlayerItem?
     private var durationObserver: NSKeyValueObservation?
     private var statusObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
-    private var chaseTime: CMTime = .invalid
-    private var isSeekInProgress = false
+    /// Guards `chaseTime` / `isSeekInProgress`. The chase pattern is
+    /// driven from the main actor but AVPlayer's seek completion handler
+    /// fires on an arbitrary internal queue — without this lock the two
+    /// would race.
+    private let chaseState = OSAllocatedUnfairLock<ChaseState>(initialState: .init())
 
     var currentTime: TimeInterval {
         guard player.currentItem != nil else { return 0 }
@@ -72,14 +81,22 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
     }
 
     func seekScrubbing(to time: TimeInterval) {
-        chaseTime = CMTime(seconds: time, preferredTimescale: 600)
-        if !isSeekInProgress { trySeekToChaseTime() }
+        let target = CMTime(seconds: time, preferredTimescale: 600)
+        let shouldKick = chaseState.withLock { state -> Bool in
+            state.chaseTime = target
+            return !state.isSeekInProgress
+        }
+        if shouldKick { trySeekToChaseTime() }
     }
 
     private func trySeekToChaseTime() {
-        guard !isSeekInProgress, chaseTime.isValid, player.currentItem != nil else { return }
-        let target = chaseTime
-        isSeekInProgress = true
+        guard player.currentItem != nil else { return }
+        let target: CMTime? = chaseState.withLock { state in
+            guard !state.isSeekInProgress, state.chaseTime.isValid else { return nil }
+            state.isSeekInProgress = true
+            return state.chaseTime
+        }
+        guard let target else { return }
         // QA1820 trade-off: infinite tolerance snaps to the nearest already-
         // decoded sync sample (I-frame), so during a drag only I-frames
         // appear — mid-GOP frames are skipped. Acceptable because the View
@@ -92,10 +109,11 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
             toleranceAfter: .positiveInfinity
         ) { [weak self] _ in
             guard let self else { return }
-            self.isSeekInProgress = false
-            if CMTimeCompare(self.chaseTime, target) != 0 {
-                self.trySeekToChaseTime()
+            let kickAgain: Bool = self.chaseState.withLock { state in
+                state.isSeekInProgress = false
+                return CMTimeCompare(state.chaseTime, target) != 0
             }
+            if kickAgain { self.trySeekToChaseTime() }
         }
     }
 
