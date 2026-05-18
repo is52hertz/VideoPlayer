@@ -132,6 +132,18 @@ final class PlayerViewModel {
         }
     }
 
+    /// Live, low-latency scrub. Coalesces into a single in-flight seek;
+    /// follow with `seek(to:)` on commit for exact-frame accuracy.
+    func scrub(to time: TimeInterval) {
+        let clamped = max(0, min(time, duration))
+        engine.seekScrubbing(to: clamped)
+        currentTime = clamped
+
+        if state == .finished {
+            state = .paused
+        }
+    }
+
     func seekForward(_ delta: TimeInterval = 10) {
         let clamped = min(currentTime + delta, duration)
         engine.seek(to: clamped)

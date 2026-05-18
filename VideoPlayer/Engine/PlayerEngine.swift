@@ -15,6 +15,10 @@ protocol PlayerEngine: AnyObject {
     func play()
     func pause()
     func seek(to time: TimeInterval)
+    /// Coalesced, lossy seek for live scrubbing. Multiple rapid calls only
+    /// ever have one in flight; tolerance is wide for low latency. Follow
+    /// with `seek(to:)` on release to commit the exact frame.
+    func seekScrubbing(to time: TimeInterval)
     func seekForward(_ delta: TimeInterval)
     func seekBackward(_ delta: TimeInterval)
     func attachLayer(_ layer: AVPlayerLayer)

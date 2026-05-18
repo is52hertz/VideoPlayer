@@ -7,6 +7,8 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
     private var durationObserver: NSKeyValueObservation?
     private var statusObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
+    private var chaseTime: CMTime = .invalid
+    private var isSeekInProgress = false
 
     var currentTime: TimeInterval {
         guard player.currentItem != nil else { return 0 }
@@ -33,6 +35,7 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
 
     override init() {
         super.init()
+        player.automaticallyWaitsToMinimizeStalling = false
         setupTimeObserver()
     }
 
@@ -43,6 +46,7 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
     func load(url: URL) {
         teardownItemObservers()
         let newItem = AVPlayerItem(url: url)
+        newItem.preferredForwardBufferDuration = 1
         item = newItem
         player.replaceCurrentItem(with: newItem)
         observeItem(newItem)
@@ -59,6 +63,28 @@ final class AVPlayerEngine: NSObject, PlayerEngine {
     func seek(to time: TimeInterval) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    func seekScrubbing(to time: TimeInterval) {
+        chaseTime = CMTime(seconds: time, preferredTimescale: 600)
+        if !isSeekInProgress { trySeekToChaseTime() }
+    }
+
+    private func trySeekToChaseTime() {
+        guard !isSeekInProgress, chaseTime.isValid, player.currentItem != nil else { return }
+        let target = chaseTime
+        isSeekInProgress = true
+        player.seek(
+            to: target,
+            toleranceBefore: .positiveInfinity,
+            toleranceAfter: .positiveInfinity
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.isSeekInProgress = false
+            if CMTimeCompare(self.chaseTime, target) != 0 {
+                self.trySeekToChaseTime()
+            }
+        }
     }
 
     func seekForward(_ delta: TimeInterval) {

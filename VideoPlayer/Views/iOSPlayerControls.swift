@@ -248,11 +248,12 @@ struct iOSPlayerControls: View {
                         let speed = scrubSpeed(forZone: zone)
                         accumulatedSeek += (dx / geo.size.width) * duration * speed
                         lastDragX = value.location.x
-                        viewModel.seek(to: max(0, min(duration, startTime + accumulatedSeek)))
+                        viewModel.scrub(to: max(0, min(duration, startTime + accumulatedSeek)))
                     }
                     .onEnded { value in
                         let vx = Double(value.velocity.width)
                         guard abs(vx) > 300 else {
+                            viewModel.seek(to: viewModel.currentTime)
                             clearScrubState()
                             return
                         }
@@ -304,10 +305,11 @@ struct iOSPlayerControls: View {
                 if Task.isCancelled { return }
                 let dx = v * frame
                 t = max(0, min(duration, t + (dx / w) * duration * speed))
-                viewModel.seek(to: t)
+                viewModel.scrub(to: t)
                 v *= exp(-decayPerSec * frame)
                 try? await Task.sleep(for: .milliseconds(16))
             }
+            viewModel.seek(to: t)
             clearScrubState()
         }
     }
