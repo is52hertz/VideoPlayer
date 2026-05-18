@@ -40,18 +40,19 @@
   - Build: `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer build`
   - Test:  `xcodebuild -project VideoPlayer.xcodeproj -scheme VideoPlayer test`
 - **Commit format:** `^(feat|fix|refactor|style|docs|test|chore): .{1,72}$`
-- **Auto-commit** each logical unit. No reminders needed. Never commit mid-refactor.
+- **Auto-commit on green build.** Each session round: as soon as `xcodebuild` succeeds, commit the logical unit. Do NOT wait for the user to manually verify in the simulator before committing — the user reviews via git history, not via blocking handoff. Never commit mid-refactor or on a broken build.
 
 ---
 
 ## Unified Guidelines
 
 ### Architecture
-- **MVVM, strict.** View → ViewModel → PlayerEngine → AVPlayer.
-  - Mutable state, IO, async work, side effects → `@Observable` ViewModels or Services. Never in View bodies or `.onAppear`.
+- **MVVM, preferred.** View → ViewModel → PlayerEngine → AVPlayer.
+  - Mutable state, IO, async work, side effects → `@Observable` ViewModels or Services. Avoid in View bodies or `.onAppear` by default.
   - Views invoke intents (`vm.togglePlayback()`); no direct access to `AVPlayer`, persistence, or services.
   - Do **not** adopt SwiftUI "MV-style" (state on View, services injected into the body), even if `apple-skills` suggests it.
-  - **Exception:** stateless presentation primitives (`GlassButton`, `VisualEffectBackground`, etc.) need no VM.
+  - **Exception 1:** stateless presentation primitives (`GlassButton`, `VisualEffectBackground`, etc.) need no VM.
+  - **Exception 2 — performance:** MVVM may be relaxed when strict adherence demonstrably hurts performance (e.g. high-frequency gesture state that would otherwise churn `@Observable` and cascade view invalidations). Keep such View-local state minimal, comment *why* it lives in the View, and still route the resulting intent (`seek`, `setVolume`, …) through the ViewModel. MVVM is the default; performance is the only sanctioned reason to deviate.
 - Playback isolated behind `PlayerEngine` protocol.
 - Concern boundaries: Playback · Subtitle · AI transcription · Media access · Persistence · Design system · Feature views.
 - AI subtitle = replaceable service. Never hardcode in UI.
