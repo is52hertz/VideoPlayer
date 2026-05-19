@@ -45,7 +45,7 @@ struct iOSPlayerControls: View {
     // cycle, so connected taps without throttling drain into a visible
     // tail of extra spins after the user stops tapping. Bounce is
     // short-lived and looks fine without throttle.
-    private static let rotateCooldown: TimeInterval = 0.65
+    private static let rotateCooldown: TimeInterval = 1.7
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
     @State private var forwardBounceTrigger: Int = 0
