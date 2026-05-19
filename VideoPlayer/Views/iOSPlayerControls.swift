@@ -36,16 +36,25 @@ struct iOSPlayerControls: View {
     private static let skipStepSeconds: TimeInterval = 10
 
     // Skip-icon rotation runs independently of the scrubber's 0.3s
-    // ease-out. `SymbolEffectOptions.speed(_:)` multiplies the effect's
-    // intrinsic duration; 5× ≈ a 0.12s spin, which reads punchy against
-    // the calmer progress-bar tween.
+    // ease-out. Known SF Symbol gotcha: `.speed(_:)` is silently ignored
+    // on one-shot (`value:`-triggered) `.rotate` — only `.repeating`
+    // honors it. So we run `.rotate.byLayer` as a repeating effect gated
+    // by `isActive:`, and turn the gate off after one cycle's worth of
+    // wall-clock time. Mid-spin taps cancel + reschedule the stop task,
+    // which extends the active window — connected taps stay smooth, and
+    // the spin still cleanly ends ~rotationSymbolCycleDuration after the
+    // last tap.
+    private static let rotationSymbolBaselineDuration: TimeInterval = 0.6
     private static let rotationSymbolSpeed: Double = 5.0
+    private static var rotationSymbolCycleDuration: TimeInterval {
+        rotationSymbolBaselineDuration / rotationSymbolSpeed
+    }
 
-    // Bump on each tap to retrigger the one-shot per-layer rotate +
-    // bounce symbol effects. `.rotate.byLayer` keeps the "10" digits
-    // stationary while only the arrow layer spins.
-    @State private var forwardSpinTrigger: Int = 0
-    @State private var backwardSpinTrigger: Int = 0
+    @State private var forwardIsSpinning: Bool = false
+    @State private var backwardIsSpinning: Bool = false
+    @State private var forwardSpinStopTask: Task<Void, Never>?
+    @State private var backwardSpinStopTask: Task<Void, Never>?
+
     @State private var playBounceTrigger: Int = 0
 
     var body: some View {
@@ -194,11 +203,11 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise.byLayer,
-                        options: .nonRepeating.speed(Self.rotationSymbolSpeed),
-                        value: backwardSpinTrigger
+                        options: .repeating.speed(Self.rotationSymbolSpeed),
+                        isActive: backwardIsSpinning
                     )
             } action: {
-                backwardSpinTrigger &+= 1
+                spinBackward()
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
@@ -223,13 +232,31 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise.byLayer,
-                        options: .nonRepeating.speed(Self.rotationSymbolSpeed),
-                        value: forwardSpinTrigger
+                        options: .repeating.speed(Self.rotationSymbolSpeed),
+                        isActive: forwardIsSpinning
                     )
             } action: {
-                forwardSpinTrigger &+= 1
+                spinForward()
                 viewModel.seekForward(Self.skipStepSeconds)
             }
+        }
+    }
+
+    private func spinForward() {
+        forwardIsSpinning = true
+        forwardSpinStopTask?.cancel()
+        forwardSpinStopTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.rotationSymbolCycleDuration))
+            if !Task.isCancelled { forwardIsSpinning = false }
+        }
+    }
+
+    private func spinBackward() {
+        backwardIsSpinning = true
+        backwardSpinStopTask?.cancel()
+        backwardSpinStopTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.rotationSymbolCycleDuration))
+            if !Task.isCancelled { backwardIsSpinning = false }
         }
     }
 
