@@ -69,3 +69,44 @@ Reset to `b8503b6` 的 `iOSPlayerControls.swift`：
 | `try/v3-best-feel-current` | `b8503b6` | byLayer + per-tap spring pulse（当前 main 状态） |
 
 `git checkout try/<name>` → build → 目视比较 → 选最佳。
+
+---
+
+## Addendum 2026-05-19 — Apple 一线组件视觉精致度差距的根因推测
+
+在做音量胶囊 UI/UX 那一轮（commit `ca595f2` / `50a47cc`）时，回头讨论了 Apple TV 音量 mute 斜线的"绘出"动画 —— 进一步意识到我们这条 skip-rotate 卡点很可能不是孤立问题，而是同一类「公开 API 能力 < Apple 自家组件能力」的具体案例。归档讨论结论：
+
+### 三条相互印证的证据
+
+1. **逻辑闭合**：iOS 26 公开 API 不暴露 `.rotate.byLayer` cycle 时长 → 第三方做不到。Apple 自家做到 → Apple 用的不是这套公开 API。本 issue line 37 已经写下"走私有 API，要么用了不同的 effect 类型"，下面把"不同的 effect 类型"具体化。
+
+2. **行业旁证**：严肃第三方播放器（VLC / Infuse / nPlayer）的 skip 动画**都**和系统差一截。这种集体缺失最经济的解释是公开 API 缺一块，而不是大家都没动脑。
+
+3. **Apple 自家 app 同一图标视觉略异**：Apple Music / Control Center / Apple TV Remote 三个 app 里 mute 斜线长得**略有差异** —— 同一公开 API 调用不可能产出不同视觉，更支持"各自带自己的资源"。
+
+### 最可能的 Apple 内部实现路径（按概率排序）
+
+| 路径 | 描述 | 第三方可复刻？ |
+|---|---|---|
+| **CAPackage / `.capackage`** | QuartzCore SPI，矢量动画 + 状态机打包为资源文件。AVPlayerViewController 内部 bundle 里历史上能 dump 到 `.ca` / `.capackage` 资源。给图标的每一层（旋转箭头、斜线 stroke、波纹）做独立 keyframe + timing curve。 | ❌ SPI，App Review 风险 |
+| **私有 SymbolEffect SPI** | `NSSymbolRotateEffect` / `NSSymbolReplaceEffect` 可能有非公开属性（duration / curve）。Apple 自己读写，公开 API 不暴露。 | ❌ private API，脆 |
+| **完全自绘 + 视觉对齐 SF Symbol** | UIKit `CAShapeLayer` + UIBezierPath，独立动画，外观与 SF Symbol 像素级对齐。开发成本高。 | ⚠️ 工程量大但合规 |
+| **三者混用** | 旋转走私有 SymbolEffect、斜线走 CAPackage、波纹走 SF Symbol —— 不同动画选最合适的工具。 | ❌ |
+
+### 对本 issue 的最终态判断
+
+- 公开 API 路线已穷尽（见上面 14 条尝试表），**不再尝试**
+- 私有 API / CAPackage / SPI 路线**永久不走**：违反 App Review 红线 + 违反本仓 CLAUDE.md "Native Apple APIs only" 硬约束
+- 当前 `b8503b6` 的「discrete byLayer rotate + 1.7s cooldown + 独立 bounce trigger」**接受为最终态**，直到：
+  - WWDC 27+ 公开 `SymbolEffectOptions.duration(_:)` 或类似 cycle-timing API；或
+  - Apple 把 CAPackage runtime 或部分私有 SymbolEffect 属性公开
+
+### 行业惯例佐证
+
+业内对这类卡点的主流解法是：
+
+1. **接受公开 API 上限**（大多数 app 走这条）
+2. **完全自绘**（VLC 等高定制 app 走这条，工程量大）
+3. **Rive / Lottie**（设计 + 工程协作，但与"Native Apple APIs only"冲突，本仓不走）
+
+我们选 (1)。本 addendum 的存在是为了避免未来接手人重走 14 步死路。
