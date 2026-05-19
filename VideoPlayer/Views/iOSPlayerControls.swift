@@ -167,7 +167,15 @@ struct iOSPlayerControls: View {
             )
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
-                .contentTransition(.symbolEffect(.replace.downUp))
+                // SF Symbols 6 (iOS 18+) Magic Replace: 识别 mute / unmute
+                // 之间的共享 speaker 层，只对斜线做 stroke draw on/off，
+                // 不再整体 crossfade —— 对齐 SF Symbols app 里
+                // 「替换 · 按图层 · 首选魔术替换 · 向下-向上」预览。
+                // Magic Replace 本就是逐层处理，不需显式 .byLayer。
+                // fallback `.downUp` 给不支持 magic 的符号对兜底。
+                .contentTransition(
+                    .symbolEffect(.replace.magic(fallback: .downUp))
+                )
                 .animation(.smooth(duration: 0.25), value: viewModel.systemVolume)
                 .opacity(isScrubActive ? 0 : 1)
         }
