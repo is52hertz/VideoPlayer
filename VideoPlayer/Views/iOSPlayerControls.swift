@@ -211,7 +211,7 @@ struct iOSPlayerControls: View {
             Text(formatTime(viewModel.currentTime, placeholder: !hasDuration))
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
-                .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
+                .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
                 .frame(minWidth: 42, alignment: .trailing)
                 .scaleEffect(timeLabelScale, anchor: .trailing)
                 .allowsHitTesting(false)
@@ -244,9 +244,13 @@ struct iOSPlayerControls: View {
                         .frame(width: geo.size.width * progress, height: barHeight)
                 }
                 // HIG: subtle drop shadow keeps the bar legible against
-                // bright frames once the vignette fades on scrub. Applied
-                // on the ZStack so both capsules share one shadow pass.
-                .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
+                // bright frames once the vignette fades on scrub.
+                // `compositingGroup()` flattens the two capsules into a
+                // single layer first, so the fill's shadow doesn't stack
+                // on top of the track's shadow. Opacity tied to scrub
+                // state — fades in via the root `.animation(value:)`.
+                .compositingGroup()
+                .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
                 Spacer()
             }
             .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: isScrubbing)
