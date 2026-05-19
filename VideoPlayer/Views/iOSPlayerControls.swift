@@ -161,12 +161,14 @@ struct iOSPlayerControls: View {
                 .frame(width: isPad ? 144 : 96)
                 .opacity(isScrubActive ? 0 : 1)
 
-            Image(systemName: volumeIconSystemName, variableValue: volumeIconVariableValue)
+            Image(
+                systemName: volumeIconSystemName,
+                variableValue: Double(viewModel.systemVolume)
+            )
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace.downUp))
-                .animation(.smooth(duration: 0.25), value: volumeIconVariableValue)
-                .animation(.smooth(duration: 0.25), value: volumeIconSystemName)
+                .animation(.smooth(duration: 0.25), value: viewModel.systemVolume)
                 .opacity(isScrubActive ? 0 : 1)
         }
         .padding(.horizontal, 16)
@@ -177,19 +179,10 @@ struct iOSPlayerControls: View {
     }
 
     private var volumeIconSystemName: String {
+        // mute ↔ unmute 触发 .contentTransition(.symbolEffect(.replace.downUp))。
+        // 不静音时统一用 speaker.wave.3.fill，靠 variableValue=systemVolume
+        // 让 SF Symbol 自己按内部阈值（约 1/3、2/3）逐层点亮 0~3 条波纹。
         viewModel.systemVolume < 0.001 ? "speaker.slash.fill" : "speaker.wave.3.fill"
-    }
-
-    /// 0 ｜ 1/3 ｜ 2/3 ｜ 1 四档，喂给 SF Symbol 的 variableValue 让
-    /// speaker.wave.3.fill 渐进展示 0/1/2/3 条波纹。
-    private var volumeIconVariableValue: Double {
-        let v = Double(viewModel.systemVolume)
-        switch v {
-        case ..<0.001:      return 0
-        case ..<(1.0 / 3):  return 0.34
-        case ..<(2.0 / 3):  return 0.67
-        default:            return 1.0
-        }
     }
 
     // MARK: - Playback (center)
