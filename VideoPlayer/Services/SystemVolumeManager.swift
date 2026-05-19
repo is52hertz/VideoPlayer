@@ -72,10 +72,15 @@ final class SystemVolumeManager {
 
     /// UI 拖动写入入口。本地 volume 立刻反映手指位置，再异步写 slider。
     /// 拖动期间 KVO 短路；松手时 syncFromSystem 吸收延迟。
+    /// 到顶 / 到底时震一次 —— boundary haptic 不分硬件键 / 手触，凡触达就反馈。
     func setUserVolume(_ newValue: Float) {
         let clamped = max(0, min(1, newValue))
+        let oldVolume = volume
         volume = clamped
         writeToSystem(clamped)
+        if crossedBoundary(oldVolume: oldVolume, newVolume: clamped) {
+            fireHapticThrottled()
+        }
     }
 
     /// 主动从系统读取一次真实音量。
@@ -145,30 +150,46 @@ final class SystemVolumeManager {
     }
 
     /// 根据原生硬件键节奏决定是否 fire haptic。规则见类注释 (Haptic state)。
+    /// 仅 KVO 路径调；UI 拖动走 setUserVolume，由它自己处理 boundary haptic。
     private func evaluateHaptic(oldVolume: Float, newVolume: Float) {
         let now = Date()
         defer { lastKVOTime = now }
-
-        let hitMax = newVolume >= 1.0 - Self.boundaryEpsilon
-            && oldVolume < 1.0 - Self.boundaryEpsilon
-        let hitMin = newVolume <= Self.boundaryEpsilon
-            && oldVolume > Self.boundaryEpsilon
 
         // "长按中" = 当前 KVO 距上次 KVO < 200ms。首次 KVO 不算长按（单按静默）。
         let isContinuous = lastKVOTime != .distantPast
             && now.timeIntervalSince(lastKVOTime) < Self.continuousWindow
         // 越过原生一格步进 (1/16)，留 0.005 epsilon 容忍浮点抖动。
         let crossedStep = abs(newVolume - lastHapticVolume) >= Self.nativeStep - 0.005
+        let isBoundary = crossedBoundary(oldVolume: oldVolume, newVolume: newVolume)
 
-        let shouldHaptic = hitMax || hitMin || (isContinuous && crossedStep)
+        let shouldHaptic = isBoundary || (isContinuous && crossedStep)
         guard shouldHaptic else { return }
 
-        // 硬节流：防 CC 极速滑造成 burst haptic 轰鸣。原生节奏 ~100ms，50ms 不卡合法路径。
-        guard now.timeIntervalSince(lastHapticTime) >= Self.hapticMinInterval else { return }
+        if fireHapticThrottled() {
+            lastHapticVolume = newVolume
+        }
+    }
 
+    /// boundary 判定：到顶 / 到底**首次穿越**才算。已经在边界继续按不重复触发。
+    private func crossedBoundary(oldVolume: Float, newVolume: Float) -> Bool {
+        let hitMax = newVolume >= 1.0 - Self.boundaryEpsilon
+            && oldVolume < 1.0 - Self.boundaryEpsilon
+        let hitMin = newVolume <= Self.boundaryEpsilon
+            && oldVolume > Self.boundaryEpsilon
+        return hitMax || hitMin
+    }
+
+    /// 受 50ms 硬节流的 haptic 触发。返回是否真的 fire（让调用方按需更新基准）。
+    /// 节流防 CC 极速滑造成 burst 轰鸣，原生硬件键节奏 ~100ms，50ms 不卡合法路径。
+    @discardableResult
+    private func fireHapticThrottled() -> Bool {
+        let now = Date()
+        guard now.timeIntervalSince(lastHapticTime) >= Self.hapticMinInterval else {
+            return false
+        }
         hapticGenerator.impactOccurred()
-        lastHapticVolume = newVolume
         lastHapticTime = now
+        return true
     }
 
     private func observeForeground() {
