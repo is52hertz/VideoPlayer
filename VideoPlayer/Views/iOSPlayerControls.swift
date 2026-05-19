@@ -35,16 +35,9 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Accumulating rotation angle drives the skip icons via
-    // `.rotationEffect`. `withAnimation` interpolates from the current
-    // animated value, so tapping mid-rotation cleanly retargets to a
-    // larger angle — SwiftUI's animation system gives natural mid-flight
-    // acceleration without any cancel/restart, and the last tap's full
-    // 360° always rides out to completion.
-    @State private var forwardAngle: Double = 0
-    @State private var backwardAngle: Double = 0
-
-    // Bump on each tap to retrigger the one-shot bounce symbol effect.
+    // Bump on each tap to retrigger the one-shot per-layer rotate +
+    // bounce symbol effects. `.rotate.byLayer` keeps the "10" digits
+    // stationary while only the arrow layer spins.
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
     @State private var playBounceTrigger: Int = 0
@@ -193,13 +186,14 @@ struct iOSPlayerControls: View {
                 Image(systemName: "10.arrow.trianglehead.counterclockwise")
                     .font(.system(size: skipIcon, weight: .semibold))
                     .foregroundStyle(.white)
-                    .rotationEffect(.degrees(backwardAngle))
+                    .symbolEffect(
+                        .rotate.counterClockwise.byLayer,
+                        options: .nonRepeating,
+                        value: backwardSpinTrigger
+                    )
                     .symbolEffect(.bounce, options: .nonRepeating, value: backwardSpinTrigger)
             } action: {
                 backwardSpinTrigger &+= 1
-                withAnimation(.easeOut(duration: PlayerViewModel.buttonSeekAnimationDuration)) {
-                    backwardAngle -= 360
-                }
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
@@ -222,13 +216,14 @@ struct iOSPlayerControls: View {
                 Image(systemName: "10.arrow.trianglehead.clockwise")
                     .font(.system(size: skipIcon, weight: .semibold))
                     .foregroundStyle(.white)
-                    .rotationEffect(.degrees(forwardAngle))
+                    .symbolEffect(
+                        .rotate.clockwise.byLayer,
+                        options: .nonRepeating,
+                        value: forwardSpinTrigger
+                    )
                     .symbolEffect(.bounce, options: .nonRepeating, value: forwardSpinTrigger)
             } action: {
                 forwardSpinTrigger &+= 1
-                withAnimation(.easeOut(duration: PlayerViewModel.buttonSeekAnimationDuration)) {
-                    forwardAngle += 360
-                }
                 viewModel.seekForward(Self.skipStepSeconds)
             }
         }
