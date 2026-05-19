@@ -217,8 +217,13 @@ struct iOSPlayerControls: View {
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
                 .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
-                .frame(minWidth: 42, alignment: .trailing)
-                .scaleEffect(timeLabelScale, anchor: .trailing)
+                // Leading-align the digits so the visible left edge of
+                // the start time matches the title's leading edge
+                // (both pinned to the bottom-bar container leading
+                // edge). Active-state scale anchors at `.leading` so
+                // that alignment is preserved while the digits enlarge.
+                .frame(minWidth: 42, alignment: .leading)
+                .scaleEffect(timeLabelScale, anchor: .leading)
                 .allowsHitTesting(false)
 
             progressScrubber
