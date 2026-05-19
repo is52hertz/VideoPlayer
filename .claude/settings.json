@@ -39,7 +39,8 @@
       "WebFetch(domain:www.claudepluginhub.com)",
       "mcp__XcodeBuildMCP__*",
       "mcp__xcode__*",
-      "Skill(*)"
+      "Skill(*)",
+      "mcp__plugin_context7__*"
     ],
     "deny": [
       "Bash(rm -rf*)"
