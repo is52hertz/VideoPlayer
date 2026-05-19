@@ -38,8 +38,20 @@ struct iOSPlayerControls: View {
     // Bump on each tap to retrigger the one-shot per-layer rotate +
     // bounce symbol effects. `.rotate.byLayer` keeps the "10" digits
     // stationary while only the arrow layer spins.
+    //
+    // Rotate and bounce use independent triggers so we can throttle
+    // rotate to one cycle per `rotateCooldown`. SwiftUI's discrete
+    // .rotate doesn't interrupt — each value-change queues another
+    // cycle, so connected taps without throttling drain into a visible
+    // tail of extra spins after the user stops tapping. Bounce is
+    // short-lived and looks fine without throttle.
+    private static let rotateCooldown: TimeInterval = 0.65
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
+    @State private var forwardBounceTrigger: Int = 0
+    @State private var backwardBounceTrigger: Int = 0
+    @State private var lastForwardRotateTime: Date = .distantPast
+    @State private var lastBackwardRotateTime: Date = .distantPast
     @State private var playBounceTrigger: Int = 0
 
     var body: some View {
@@ -191,9 +203,14 @@ struct iOSPlayerControls: View {
                         options: .nonRepeating,
                         value: backwardSpinTrigger
                     )
-                    .symbolEffect(.bounce, options: .nonRepeating, value: backwardSpinTrigger)
+                    .symbolEffect(.bounce, options: .nonRepeating, value: backwardBounceTrigger)
             } action: {
-                backwardSpinTrigger &+= 1
+                backwardBounceTrigger &+= 1
+                let now = Date()
+                if now.timeIntervalSince(lastBackwardRotateTime) >= Self.rotateCooldown {
+                    backwardSpinTrigger &+= 1
+                    lastBackwardRotateTime = now
+                }
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
@@ -221,9 +238,14 @@ struct iOSPlayerControls: View {
                         options: .nonRepeating,
                         value: forwardSpinTrigger
                     )
-                    .symbolEffect(.bounce, options: .nonRepeating, value: forwardSpinTrigger)
+                    .symbolEffect(.bounce, options: .nonRepeating, value: forwardBounceTrigger)
             } action: {
-                forwardSpinTrigger &+= 1
+                forwardBounceTrigger &+= 1
+                let now = Date()
+                if now.timeIntervalSince(lastForwardRotateTime) >= Self.rotateCooldown {
+                    forwardSpinTrigger &+= 1
+                    lastForwardRotateTime = now
+                }
                 viewModel.seekForward(Self.skipStepSeconds)
             }
         }
