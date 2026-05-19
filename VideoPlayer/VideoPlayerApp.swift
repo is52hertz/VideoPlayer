@@ -37,8 +37,15 @@ struct VideoPlayerApp: App {
                     viewModel.isShowingFilePicker = true
                 }
                 .keyboardShortcut("o", modifiers: .command)
+
+                OpenRotateDebugButton()
             }
         }
+
+        Window("Rotate Speed Debug", id: "rotate-debug") {
+            RotateSpeedDebugView()
+        }
+        .defaultSize(width: 720, height: 800)
         #else
         WindowGroup {
             ContentView(viewModel: viewModel)
@@ -68,6 +75,18 @@ struct VideoPlayerApp: App {
 }
 
 #if os(macOS)
+/// 菜单项辅助：CommandGroup 内的 Button 拿不到 `@Environment(\.openWindow)`，
+/// 必须包成 View 才能用。⌘⇧D 打开 Rotate Speed Debug 窗口。
+private struct OpenRotateDebugButton: View {
+    @Environment(\.openWindow) private var openWindow
+    var body: some View {
+        Button("Rotate Speed Debug") {
+            openWindow(id: "rotate-debug")
+        }
+        .keyboardShortcut("d", modifiers: [.command, .shift])
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let viewModel = PlayerViewModel()
 
