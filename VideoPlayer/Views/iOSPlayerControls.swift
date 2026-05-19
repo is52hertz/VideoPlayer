@@ -201,7 +201,6 @@ struct iOSPlayerControls: View {
                         options: .nonRepeating.speed(Self.rotationSymbolSpeed),
                         value: backwardSpinTrigger
                     )
-                    .symbolEffect(.bounce, options: .nonRepeating, value: backwardSpinTrigger)
             } action: {
                 backwardSpinTrigger &+= 1
                 viewModel.seekBackward(Self.skipStepSeconds)
@@ -231,7 +230,6 @@ struct iOSPlayerControls: View {
                         options: .nonRepeating.speed(Self.rotationSymbolSpeed),
                         value: forwardSpinTrigger
                     )
-                    .symbolEffect(.bounce, options: .nonRepeating, value: forwardSpinTrigger)
             } action: {
                 forwardSpinTrigger &+= 1
                 viewModel.seekForward(Self.skipStepSeconds)
