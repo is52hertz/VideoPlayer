@@ -35,22 +35,19 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Bump on each tap to retrigger the one-shot rotate / bounce symbol effect.
+    // Accumulating rotation angle drives the skip icons via
+    // `.rotationEffect`. `withAnimation` interpolates from the current
+    // animated value, so tapping mid-rotation cleanly retargets to a
+    // larger angle — SwiftUI's animation system gives natural mid-flight
+    // acceleration without any cancel/restart, and the last tap's full
+    // 360° always rides out to completion.
+    @State private var forwardAngle: Double = 0
+    @State private var backwardAngle: Double = 0
+
+    // Bump on each tap to retrigger the one-shot bounce symbol effect.
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
     @State private var playBounceTrigger: Int = 0
-
-    // Consecutive same-direction taps within `streakWindow` raise the
-    // rotation speed — emulates Apple TV's "tap repeatedly to scrub faster"
-    // feel. Forward and backward streaks are independent.
-    @State private var forwardTapStreak: Int = 0
-    @State private var backwardTapStreak: Int = 0
-    @State private var forwardStreakDecayTask: Task<Void, Never>?
-    @State private var backwardStreakDecayTask: Task<Void, Never>?
-
-    private static let streakWindow: TimeInterval = 0.6
-    private static let streakSpeedStep: Double = 0.35
-    private static let streakMaxBoost: Double = 1.5
 
     var body: some View {
         ZStack {
@@ -196,19 +193,13 @@ struct iOSPlayerControls: View {
                 Image(systemName: "10.arrow.trianglehead.counterclockwise")
                     .font(.system(size: skipIcon, weight: .semibold))
                     .foregroundStyle(.white)
-                    .symbolEffect(
-                        .rotate.counterClockwise,
-                        options: .nonRepeating.speed(skipRotationSpeed(streak: backwardTapStreak)),
-                        value: backwardSpinTrigger
-                    )
-                    .symbolEffect(
-                        .bounce,
-                        options: .nonRepeating.speed(2.0),
-                        value: backwardSpinTrigger
-                    )
+                    .rotationEffect(.degrees(backwardAngle))
+                    .symbolEffect(.bounce, options: .nonRepeating, value: backwardSpinTrigger)
             } action: {
-                bumpBackwardStreak()
                 backwardSpinTrigger &+= 1
+                withAnimation(.easeOut(duration: PlayerViewModel.buttonSeekAnimationDuration)) {
+                    backwardAngle -= 360
+                }
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
@@ -231,45 +222,15 @@ struct iOSPlayerControls: View {
                 Image(systemName: "10.arrow.trianglehead.clockwise")
                     .font(.system(size: skipIcon, weight: .semibold))
                     .foregroundStyle(.white)
-                    .symbolEffect(
-                        .rotate.clockwise,
-                        options: .nonRepeating.speed(skipRotationSpeed(streak: forwardTapStreak)),
-                        value: forwardSpinTrigger
-                    )
-                    .symbolEffect(
-                        .bounce,
-                        options: .nonRepeating.speed(2.0),
-                        value: forwardSpinTrigger
-                    )
+                    .rotationEffect(.degrees(forwardAngle))
+                    .symbolEffect(.bounce, options: .nonRepeating, value: forwardSpinTrigger)
             } action: {
-                bumpForwardStreak()
                 forwardSpinTrigger &+= 1
+                withAnimation(.easeOut(duration: PlayerViewModel.buttonSeekAnimationDuration)) {
+                    forwardAngle += 360
+                }
                 viewModel.seekForward(Self.skipStepSeconds)
             }
-        }
-    }
-
-    private func skipRotationSpeed(streak: Int) -> Double {
-        let base = 1.0 / PlayerViewModel.buttonSeekAnimationDuration
-        let boost = min(Double(max(streak - 1, 0)) * Self.streakSpeedStep, Self.streakMaxBoost)
-        return base * (1.0 + boost)
-    }
-
-    private func bumpForwardStreak() {
-        forwardTapStreak = min(forwardTapStreak + 1, 6)
-        forwardStreakDecayTask?.cancel()
-        forwardStreakDecayTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(Self.streakWindow))
-            if !Task.isCancelled { forwardTapStreak = 0 }
-        }
-    }
-
-    private func bumpBackwardStreak() {
-        backwardTapStreak = min(backwardTapStreak + 1, 6)
-        backwardStreakDecayTask?.cancel()
-        backwardStreakDecayTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(Self.streakWindow))
-            if !Task.isCancelled { backwardTapStreak = 0 }
         }
     }
 
