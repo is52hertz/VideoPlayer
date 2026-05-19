@@ -34,13 +34,14 @@
       "Bash(xcrun simctl*)",
       "Bash(claude plugin*)",
       "Bash(find *)",
+      "Bash(grep *)",
       "Bash(swift build *)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.claudepluginhub.com)",
       "mcp__XcodeBuildMCP__*",
       "mcp__xcode__*",
-      "Skill(*)",
-      "mcp__plugin_context7__*"
+      "mcp__plugin_*",
+      "Skill(*)"
     ],
     "deny": [
       "Bash(rm -rf*)"
