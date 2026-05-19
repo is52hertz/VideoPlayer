@@ -41,10 +41,31 @@ final class SystemVolumeManager {
     private var foregroundObserver: NSObjectProtocol?
     private static var didLogSliderLookupFailure = false
 
+    // MARK: - Haptic state
+    //
+    // 自绘音量 UI 把系统 volume HUD 抑制掉后，原生硬件键 haptic 也一并丢了
+    // （Apple 把这两件事捆绑在同一条系统路径里，没有公开 API 单独保留 haptic）。
+    // 我们用 KVO 上观察到的音量变化模式来复刻原生反馈：
+    //   - 单按一次：自然静默（lastKVOTime 距 now > 200ms，非连续节奏）
+    //   - 长按连续：每越过 1/16 一格震一次
+    //   - 到顶 / 到底：震一次（即使单按按到也震）
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+    private var lastHapticVolume: Float = 0
+    private var lastHapticTime: Date = .distantPast
+    private var lastKVOTime: Date = .distantPast
+    private static let nativeStep: Float = 1.0 / 16.0
+    private static let continuousWindow: TimeInterval = 0.2
+    private static let hapticMinInterval: TimeInterval = 0.05
+    private static let boundaryEpsilon: Float = 0.001
+
     private init() {
         setupVolumeView()
         observeSystemVolume()
         observeForeground()
+        // 预热 haptic 引擎，降低首触延迟。
+        hapticGenerator.prepare()
+        // 起点对齐当前真值，第一次 KVO 才能按 delta 正确算"越过 1/16"。
+        lastHapticVolume = volume
     }
 
     // MARK: - Public API
@@ -115,10 +136,39 @@ final class SystemVolumeManager {
                 // 拖动期间手指 = 唯一真理。松手由 isUserInteracting.didSet 统一吸收。
                 guard !self.isUserInteracting else { return }
                 if abs(self.volume - newVolume) > 0.005 {
+                    let oldVolume = self.volume
                     self.volume = newVolume
+                    self.evaluateHaptic(oldVolume: oldVolume, newVolume: newVolume)
                 }
             }
         }
+    }
+
+    /// 根据原生硬件键节奏决定是否 fire haptic。规则见类注释 (Haptic state)。
+    private func evaluateHaptic(oldVolume: Float, newVolume: Float) {
+        let now = Date()
+        defer { lastKVOTime = now }
+
+        let hitMax = newVolume >= 1.0 - Self.boundaryEpsilon
+            && oldVolume < 1.0 - Self.boundaryEpsilon
+        let hitMin = newVolume <= Self.boundaryEpsilon
+            && oldVolume > Self.boundaryEpsilon
+
+        // "长按中" = 当前 KVO 距上次 KVO < 200ms。首次 KVO 不算长按（单按静默）。
+        let isContinuous = lastKVOTime != .distantPast
+            && now.timeIntervalSince(lastKVOTime) < Self.continuousWindow
+        // 越过原生一格步进 (1/16)，留 0.005 epsilon 容忍浮点抖动。
+        let crossedStep = abs(newVolume - lastHapticVolume) >= Self.nativeStep - 0.005
+
+        let shouldHaptic = hitMax || hitMin || (isContinuous && crossedStep)
+        guard shouldHaptic else { return }
+
+        // 硬节流：防 CC 极速滑造成 burst haptic 轰鸣。原生节奏 ~100ms，50ms 不卡合法路径。
+        guard now.timeIntervalSince(lastHapticTime) >= Self.hapticMinInterval else { return }
+
+        hapticGenerator.impactOccurred()
+        lastHapticVolume = newVolume
+        lastHapticTime = now
     }
 
     private func observeForeground() {
