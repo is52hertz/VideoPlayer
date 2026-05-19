@@ -35,6 +35,16 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
+    // SF Symbol's `.rotate.*.byLayer` one-shot has an intrinsic duration
+    // of ~0.6s for a full layer rotation. `SymbolEffectOptions.speed(_:)`
+    // is the only timing knob (no explicit duration API), so we derive a
+    // multiplier that lands the rotation on the same wall-clock target
+    // as the scrubber's ease-out — keeping icon spin + bar tween in sync.
+    private static let rotationSymbolBaselineDuration: TimeInterval = 0.6
+    private static var rotationSymbolSpeed: Double {
+        rotationSymbolBaselineDuration / PlayerViewModel.buttonSeekAnimationDuration
+    }
+
     // Bump on each tap to retrigger the one-shot per-layer rotate +
     // bounce symbol effects. `.rotate.byLayer` keeps the "10" digits
     // stationary while only the arrow layer spins.
@@ -188,7 +198,7 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise.byLayer,
-                        options: .nonRepeating,
+                        options: .nonRepeating.speed(Self.rotationSymbolSpeed),
                         value: backwardSpinTrigger
                     )
                     .symbolEffect(.bounce, options: .nonRepeating, value: backwardSpinTrigger)
@@ -218,7 +228,7 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise.byLayer,
-                        options: .nonRepeating,
+                        options: .nonRepeating.speed(Self.rotationSymbolSpeed),
                         value: forwardSpinTrigger
                     )
                     .symbolEffect(.bounce, options: .nonRepeating, value: forwardSpinTrigger)
