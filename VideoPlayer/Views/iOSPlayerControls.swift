@@ -35,20 +35,14 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Experiment: two parallel attempts to actually control rotate
-    // duration on iOS 26.
-    //   (a) `.repeat(.periodic(1)).speed(...)` — `.repeat` path may
-    //       honor `.speed` where `.nonRepeating` does not.
-    //   (b) `withAnimation(.linear(duration:))` around the trigger
-    //       bump — some SwiftUI symbol effects pick up the surrounding
-    //       Transaction animation as their timing.
-    private static let rotationTargetDuration: TimeInterval = 0.05
-    private static let rotationSpeed: Double = 20.0
+    // SF Symbol rotate speed for the skip buttons. Driven via the
+    // `RotatingSymbolImage` UIKit bridge below — SwiftUI's
+    // `.symbolEffect` silently drops `.speed(_:)` for `.rotate`, but
+    // UIImageView.addSymbolEffect honors it. 5× ≈ a ~0.12s spin.
+    private static let rotationSpeed: Double = 5.0
 
-    // Each tap fires one `.rotate.byLayer` cycle via discrete `value:`
-    // trigger. iOS 26 lets multiple in-flight cycles overlap, so rapid
-    // taps visually pile up into a faster spin — no manual `.speed`,
-    // no `.repeating` gating, no session timers needed.
+    // Each tap bumps the trigger; the UIKit bridge fires one full
+    // `.rotate.*.byLayer` cycle via addSymbolEffect on every change.
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
 
@@ -201,19 +195,19 @@ struct iOSPlayerControls: View {
 
         return HStack(spacing: spacing) {
             circlePlaybackButton(diameter: skipDiameter) {
-                Image(systemName: "10.arrow.trianglehead.counterclockwise")
-                    .font(.system(size: skipIcon, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .symbolEffect(
-                        .rotate.counterClockwise.byLayer,
-                        options: .repeat(.periodic(1)).speed(Self.rotationSpeed),
-                        value: backwardSpinTrigger
-                    )
-                    .scaleEffect(backwardTapPulse)
+                RotatingSymbolImage(
+                    systemName: "10.arrow.trianglehead.counterclockwise",
+                    pointSize: skipIcon,
+                    weight: .semibold,
+                    tintColor: .white,
+                    clockwise: false,
+                    speed: Self.rotationSpeed,
+                    spinTrigger: backwardSpinTrigger
+                )
+                .frame(width: skipIcon * 1.4, height: skipIcon * 1.4)
+                .scaleEffect(backwardTapPulse)
             } action: {
-                withAnimation(.linear(duration: Self.rotationTargetDuration)) {
-                    backwardSpinTrigger &+= 1
-                }
+                backwardSpinTrigger &+= 1
                 pulseBackward()
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
@@ -234,19 +228,19 @@ struct iOSPlayerControls: View {
             }
 
             circlePlaybackButton(diameter: skipDiameter) {
-                Image(systemName: "10.arrow.trianglehead.clockwise")
-                    .font(.system(size: skipIcon, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .symbolEffect(
-                        .rotate.clockwise.byLayer,
-                        options: .repeat(.periodic(1)).speed(Self.rotationSpeed),
-                        value: forwardSpinTrigger
-                    )
-                    .scaleEffect(forwardTapPulse)
+                RotatingSymbolImage(
+                    systemName: "10.arrow.trianglehead.clockwise",
+                    pointSize: skipIcon,
+                    weight: .semibold,
+                    tintColor: .white,
+                    clockwise: true,
+                    speed: Self.rotationSpeed,
+                    spinTrigger: forwardSpinTrigger
+                )
+                .frame(width: skipIcon * 1.4, height: skipIcon * 1.4)
+                .scaleEffect(forwardTapPulse)
             } action: {
-                withAnimation(.linear(duration: Self.rotationTargetDuration)) {
-                    forwardSpinTrigger &+= 1
-                }
+                forwardSpinTrigger &+= 1
                 pulseForward()
                 viewModel.seekForward(Self.skipStepSeconds)
             }
@@ -566,6 +560,77 @@ struct VolumeViewWrapper: UIViewRepresentable {
         return view
     }
     func updateUIView(_ uiView: MediaPlayer.MPVolumeView, context: Context) {}
+}
+
+/// UIKit bridge for `.rotate.byLayer` with real speed control.
+///
+/// SwiftUI's `.symbolEffect(.rotate, options: .speed(_:))` silently
+/// drops the speed parameter for the rotate family of effects — only
+/// UIKit's `UIImageView.addSymbolEffect(_:options:animated:)` route
+/// honors `.speed(_:)`. Bumping `spinTrigger` from SwiftUI fires one
+/// full byLayer rotation cycle at the configured speed.
+private struct RotatingSymbolImage: UIViewRepresentable {
+    let systemName: String
+    let pointSize: CGFloat
+    let weight: UIImage.SymbolWeight
+    let tintColor: UIColor
+    let clockwise: Bool
+    let speed: Double
+    let spinTrigger: Int
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(lastTrigger: spinTrigger, lastSystemName: systemName)
+    }
+
+    func makeUIView(context: Context) -> UIImageView {
+        let view = UIImageView()
+        view.contentMode = .center
+        view.tintColor = tintColor
+        view.preferredSymbolConfiguration = UIImage.SymbolConfiguration(
+            pointSize: pointSize, weight: weight
+        )
+        view.image = UIImage(systemName: systemName)
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        view.setContentHuggingPriority(.required, for: .vertical)
+        return view
+    }
+
+    func updateUIView(_ view: UIImageView, context: Context) {
+        view.tintColor = tintColor
+        view.preferredSymbolConfiguration = UIImage.SymbolConfiguration(
+            pointSize: pointSize, weight: weight
+        )
+        if context.coordinator.lastSystemName != systemName {
+            view.image = UIImage(systemName: systemName)
+            context.coordinator.lastSystemName = systemName
+        }
+
+        guard spinTrigger != context.coordinator.lastTrigger else { return }
+        context.coordinator.lastTrigger = spinTrigger
+
+        if clockwise {
+            view.addSymbolEffect(
+                .rotate.clockwise.byLayer,
+                options: .nonRepeating.speed(speed),
+                animated: true
+            )
+        } else {
+            view.addSymbolEffect(
+                .rotate.counterClockwise.byLayer,
+                options: .nonRepeating.speed(speed),
+                animated: true
+            )
+        }
+    }
+
+    final class Coordinator {
+        var lastTrigger: Int
+        var lastSystemName: String
+        init(lastTrigger: Int, lastSystemName: String) {
+            self.lastTrigger = lastTrigger
+            self.lastSystemName = lastSystemName
+        }
+    }
 }
 
 // MARK: - Previews
