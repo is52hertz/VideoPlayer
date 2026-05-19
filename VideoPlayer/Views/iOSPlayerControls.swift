@@ -289,9 +289,20 @@ struct iOSPlayerControls: View {
                     .frame(height: barHeight)
                     .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
                     .overlay(alignment: .leading) {
+                        // Full-width fill Capsule revealed only up to
+                        // `progress` via a leading-aligned Rectangle
+                        // mask. The capsule's natural rounded leading
+                        // cap is always present; sub-`barHeight`
+                        // widths show a curved slice of that cap
+                        // rather than a square block — and there's no
+                        // minimum-width floor, so the bar tracks real
+                        // time exactly from frame 0.
                         Capsule()
                             .fill(.white)
-                            .frame(width: geo.size.width * progress, height: barHeight)
+                            .mask(alignment: .leading) {
+                                Rectangle()
+                                    .frame(width: geo.size.width * progress)
+                            }
                     }
                 Spacer()
             }
