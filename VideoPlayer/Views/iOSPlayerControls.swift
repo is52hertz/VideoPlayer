@@ -177,14 +177,19 @@ struct iOSPlayerControls: View {
         // skip buttons sit smaller on either side. iPad gets the most
         // generous values; compact-height phones (landscape) tighten
         // up so the row still fits above the progress bar.
-        let spacing: CGFloat = isPad ? 112 : (isCompactHeight ? 64 : 88)
-        let playDiameter: CGFloat = isPad ? 144 : (isCompactHeight ? 96 : 112)
-        let playIcon: CGFloat = isPad ? 56 : (isCompactHeight ? 40 : 46)
-        let skipDiameter: CGFloat = isPad ? 104 : (isCompactHeight ? 72 : 84)
+        // Three branches: iPad (largest), landscape phone (compact height,
+        // generous horizontal room), portrait phone (tightest — must fit
+        // skip + spacing + play + spacing + skip into ~375pt safely on
+        // small iPhones). The portrait row sums to ~312pt, leaving
+        // breathing room either side.
+        let spacing: CGFloat = isPad ? 112 : (isCompactHeight ? 64 : 44)
+        let playDiameter: CGFloat = isPad ? 144 : (isCompactHeight ? 96 : 88)
+        let playIcon: CGFloat = isPad ? 56 : (isCompactHeight ? 40 : 36)
+        let skipDiameter: CGFloat = isPad ? 104 : (isCompactHeight ? 72 : 68)
         // Skip glyphs ("10.arrow.trianglehead.*") read smaller than the
         // play/pause fill, so push them to ~55% of the circle to match
         // the visual weight of the central play button.
-        let skipIcon: CGFloat = isPad ? 58 : (isCompactHeight ? 40 : 46)
+        let skipIcon: CGFloat = isPad ? 58 : (isCompactHeight ? 40 : 38)
 
         return HStack(spacing: spacing) {
             circlePlaybackButton(diameter: skipDiameter) {
