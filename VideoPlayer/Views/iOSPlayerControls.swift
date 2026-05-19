@@ -17,7 +17,7 @@ struct iOSPlayerControls: View {
     @State private var isFlinging = false
     @State private var inertiaTask: Task<Void, Never>?
     @State private var lastZone: Int?
-    @State private var screenHeight: CGFloat = 0
+    @State private var screenSize: CGSize = .zero
 
     private var isScrubActive: Bool { isScrubbing || isFlinging }
 
@@ -57,10 +57,10 @@ struct iOSPlayerControls: View {
             }
         }
         .ignoresSafeArea()
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.height
+        .onGeometryChange(for: CGSize.self) { proxy in
+            proxy.size
         } action: { newValue in
-            screenHeight = newValue
+            screenSize = newValue
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isScrubActive)
     }
@@ -186,11 +186,10 @@ struct iOSPlayerControls: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        // One shared padded container so the title's leading edge is
-        // guaranteed to match the progress row's leading edge — no
-        // duplicated `.padding`/`.safeAreaPadding` per child, which
-        // could yield slightly different insets on real devices (where
-        // safe-area values are non-zero) versus the Preview canvas.
+        // Fixed-width container sized to the 16:9 video content area,
+        // horizontally centered on screen. Title and progress row
+        // share `VStack(alignment: .leading)` so their leading edges
+        // are guaranteed to coincide on Canvas / simulator / device.
         VStack(alignment: .leading, spacing: 12) {
             if !viewModel.videoTitle.isEmpty {
                 Text(viewModel.videoTitle)
@@ -204,26 +203,44 @@ struct iOSPlayerControls: View {
 
             progressRow
         }
-        .padding(.horizontal, isPad ? 32 : 20)
-        .safeAreaPadding(.horizontal)
+        .frame(width: bottomBarContainerWidth)
+        .frame(maxWidth: .infinity, alignment: .center)
         .padding(.bottom, isCompactHeight ? 20 : 32)
         .safeAreaPadding(.bottom)
     }
 
+    /// Width of the bottom-bar group. At rest equals the 16:9 video
+    /// content width (so the bar maps to the visible video area in
+    /// landscape, not the black letterbox). Capped below the screen
+    /// width by a minimum side inset so portrait / iPad layouts still
+    /// have breathing room around the time digits.
+    private var bottomBarContainerWidth: CGFloat {
+        guard screenSize.width > 0, screenSize.height > 0 else {
+            return .infinity
+        }
+        let videoWidth = min(screenSize.width, screenSize.height * (16.0 / 9.0))
+        let minSideInset: CGFloat = isPad ? 32 : 20
+        let maxAllowed = max(0, screenSize.width - minSideInset * 2)
+        return min(videoWidth, maxAllowed)
+    }
+
     private var progressRow: some View {
+        // Time labels use intrinsic widths so the HStack's flex sizing
+        // gives `progressScrubber` whatever space is left — the bar
+        // compresses naturally when either digit string widens from
+        // `M:SS` to `H:MM:SS`. The 10-pt HStack spacing is the only
+        // gap between digits and bar, so left/right gaps stay
+        // identical regardless of digit width. Active-state scale is
+        // anchored *outward* (.trailing on start, .leading on end) so
+        // the digits grow away from the bar — the bar's rendered
+        // width does not change during scrub.
         let hasDuration = viewModel.duration > 0
         return HStack(spacing: 10) {
             Text(formatTime(viewModel.currentTime, placeholder: !hasDuration))
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
                 .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
-                // Leading-align the digits so the visible left edge of
-                // the start time matches the title's leading edge
-                // (both pinned to the bottom-bar container leading
-                // edge). Active-state scale anchors at `.leading` so
-                // that alignment is preserved while the digits enlarge.
-                .frame(minWidth: 42, alignment: .leading)
-                .scaleEffect(timeLabelScale, anchor: .leading)
+                .scaleEffect(timeLabelScale, anchor: .trailing)
                 .allowsHitTesting(false)
 
             progressScrubber
@@ -231,8 +248,7 @@ struct iOSPlayerControls: View {
             Text(formatTime(viewModel.duration, placeholder: !hasDuration))
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
-                .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
-                .frame(minWidth: 42, alignment: .leading)
+                .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
                 .scaleEffect(timeLabelScale, anchor: .leading)
                 .allowsHitTesting(false)
         }
@@ -310,7 +326,7 @@ struct iOSPlayerControls: View {
     }
 
     private func scrubZone(forY y: CGFloat) -> Int {
-        let h = screenHeight > 0 ? screenHeight : 1000
+        let h = screenSize.height > 0 ? screenSize.height : 1000
         if y < h / 2 { return 0 }
         if y < h * 3 / 4 { return 1 }
         return 2
