@@ -158,7 +158,7 @@ struct iOSPlayerControls: View {
             //     .opacity(isScrubActive ? 0 : 1)
 
             volumeScrubber
-                .frame(width: isPad ? 144 : 96)
+                .frame(width: isPad ? 176 : 120)
                 .opacity(isScrubActive ? 0 : 1)
 
             Image(
@@ -177,6 +177,11 @@ struct iOSPlayerControls: View {
                     .symbolEffect(.replace.magic(fallback: .downUp))
                 )
                 .animation(.smooth(duration: 0.25), value: viewModel.systemVolume)
+                // mute (slash) 比 wave.3 窄，不锁宽度会导致整条胶囊
+                // 在切换时跳动。给 Image 一个能容纳两种符号的固定宽度
+                // (= speaker.wave.3.fill @ 16pt semibold 的视觉宽度，
+                // 留 2pt 余量)，居中对齐让两种符号都在槽位中心。
+                .frame(width: 24, alignment: .center)
                 .opacity(isScrubActive ? 0 : 1)
         }
         .padding(.horizontal, 16)
