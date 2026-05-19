@@ -235,22 +235,23 @@ struct iOSPlayerControls: View {
         return GeometryReader { geo in
             VStack {
                 Spacer()
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.white.opacity(0.3))
-                        .frame(height: barHeight)
-                    Capsule()
-                        .fill(.white)
-                        .frame(width: geo.size.width * progress, height: barHeight)
-                }
                 // HIG: subtle drop shadow keeps the bar legible against
-                // bright frames once the vignette fades on scrub.
-                // `compositingGroup()` flattens the two capsules into a
-                // single layer first, so the fill's shadow doesn't stack
-                // on top of the track's shadow. Opacity tied to scrub
-                // state — fades in via the root `.animation(value:)`.
-                .compositingGroup()
-                .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
+                // bright frames once the vignette fades on scrub. Cast
+                // by the outer track capsule only; the fill sits as an
+                // overlay so it never contributes a second shadow pass
+                // (compositingGroup wasn't enough — different alphas in
+                // the flattened layer still produced visible banding at
+                // the fill edge). Opacity tied to scrub state — fades
+                // in via the root `.animation(value:)`.
+                Capsule()
+                    .fill(.white.opacity(0.3))
+                    .frame(height: barHeight)
+                    .shadow(color: .black.opacity(isScrubActive ? 0.35 : 0), radius: 3, x: 0, y: 1)
+                    .overlay(alignment: .leading) {
+                        Capsule()
+                            .fill(.white)
+                            .frame(width: geo.size.width * progress, height: barHeight)
+                    }
                 Spacer()
             }
             .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: isScrubbing)
