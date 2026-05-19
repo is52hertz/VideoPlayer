@@ -82,13 +82,22 @@ final class SystemVolumeManager {
     }
 
     private func observeForeground() {
-        // App 在后台时 KVO 投递不可靠（系统会合并 / 暂停）。回前台主动重读。
+        // App 在后台时 KVO 投递不可靠（系统合并 / 暂停）。回前台主动重读。
+        // 用 didBecomeActive 而非 willEnterForeground：后者在 scene-based app
+        // 上不一定触发，且 AVAudioSession.outputVolume 在 willEnterForeground
+        // 时常仍是 stale 值。didBecomeActive 时 session 已 reactivate。
+        // 再保险：300ms 后追读一次，吸收 session 刚激活时 outputVolume 仍未
+        // 刷新的短暂窗口（实测有几十~几百毫秒的滞后）。
         foregroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
+            forName: UIApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.syncFromSystem() }
+            Task { @MainActor in
+                self?.syncFromSystem()
+                try? await Task.sleep(for: .milliseconds(300))
+                self?.syncFromSystem()
+            }
         }
     }
 
