@@ -231,7 +231,7 @@ struct iOSPlayerControls: View {
     private var progressScrubber: some View {
         let duration = max(viewModel.duration, 1)
         let progress = viewModel.currentTime / duration
-        let barHeight: CGFloat = isScrubbing ? 12 : 6
+        let barHeight: CGFloat = isScrubbing ? 10 : 6
         return GeometryReader { geo in
             VStack {
                 Spacer()
