@@ -69,6 +69,19 @@ final class PlayerViewModel {
     init(engine: any PlayerEngine = AVPlayerEngine()) {
         self.engine = engine
         setupEngineCallbacks()
+        #if os(iOS)
+        AudioSessionManager.shared.activate()
+        AudioSessionManager.shared.onShouldPause = { [weak self] in
+            guard let self, self.state == .playing else { return }
+            self.engine.pause()
+            self.state = .paused
+        }
+        AudioSessionManager.shared.onShouldResume = { [weak self] in
+            guard let self, self.state == .paused else { return }
+            self.engine.play()
+            self.state = .playing
+        }
+        #endif
     }
 
     // MARK: - Engine callbacks
