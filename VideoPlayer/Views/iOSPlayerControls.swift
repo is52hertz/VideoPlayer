@@ -186,12 +186,13 @@ struct iOSPlayerControls: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        // VStack sizes to its widest child (the progressRow HStack),
-        // letting the time digits sit OUTSIDE the 16:9 video bar in
-        // the black letterbox area on landscape phones. Centered
-        // horizontally so the bar (fixed at video width) lands exactly
-        // on the 16:9 video edges. Title and row share `.leading`
-        // alignment so their leading edges always coincide.
+        // `.fixedSize(horizontal: true)` makes the VStack hug its
+        // intrinsic width (= the HStack: digit + 10 + bar + 10 +
+        // digit). Then `.frame(maxWidth: .infinity, alignment: .center)`
+        // places the fixed-width VStack centered on screen. Without
+        // the `.fixedSize`, the VStack would expand to the proposed
+        // (full-screen) width and the inner `alignment: .leading`
+        // would push the HStack to the screen's left edge.
         VStack(alignment: .leading, spacing: 12) {
             if !viewModel.videoTitle.isEmpty {
                 Text(viewModel.videoTitle)
@@ -205,29 +206,34 @@ struct iOSPlayerControls: View {
 
             progressRow
         }
+        .fixedSize(horizontal: true, vertical: false)
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.bottom, isCompactHeight ? 20 : 32)
         .safeAreaPadding(.bottom)
     }
 
-    /// Width of the progress bar itself. Targets the 16:9 video
-    /// content edges (so the bar lines up with the visible video
-    /// frame on landscape phones), but capped so the surrounding
-    /// time-digit space plus a min side inset always fits on screen
-    /// — needed for portrait / iPad where video fills the screen.
+    /// Width of the progress bar itself. On landscape phones (where
+    /// there's letterbox space outside the 16:9 video) the bar maps
+    /// exactly to the 16:9 video edges, with the time digits sitting
+    /// in the black letterbox area. On portrait / iPad layouts (video
+    /// fills the screen, no letterbox), the bar yields room for the
+    /// digits and a minimum side inset.
     private var progressBarWidth: CGFloat {
         guard screenSize.width > 0, screenSize.height > 0 else {
-            return 0  // 0 → SwiftUI falls back to intrinsic / flex
+            return 0
         }
         let videoWidth = min(screenSize.width, screenSize.height * (16.0 / 9.0))
         let minSideInset: CGFloat = isPad ? 32 : 20
-        // Room reserved on each side for `[digit | 10pt gap]` where
-        // digit ≈ widest realistic monospaced format (H:MM:SS at
-        // 12pt ≈ 56pt). Hardcoding the upper bound is cheap and
-        // avoids a measurement pass.
-        let sideReserve: CGFloat = 10 + 56
-        let maxBar = max(0, screenSize.width - 2 * (minSideInset + sideReserve))
-        return min(videoWidth, maxBar)
+        // Landscape phone: letterbox to the sides of a 16:9 video has
+        // plenty of room for digits, so the bar can match the full
+        // video width without crowding.
+        if videoWidth + 2 * minSideInset < screenSize.width {
+            return videoWidth
+        }
+        // No letterbox room: reserve worst-case `H:MM:SS` digit width
+        // plus a 10pt gap on each side.
+        let digitReserve: CGFloat = 56 + 10
+        return max(0, screenSize.width - 2 * (minSideInset + digitReserve))
     }
 
     private var progressRow: some View {
