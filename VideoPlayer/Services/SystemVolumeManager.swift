@@ -53,13 +53,9 @@ final class SystemVolumeManager {
     private var lastHapticVolume: Float = 0
     private var lastHapticTime: Date = .distantPast
     private var lastKVOTime: Date = .distantPast
-    private var lastBoundaryHapticTime: Date = .distantPast
     private static let nativeStep: Float = 1.0 / 16.0
     private static let continuousWindow: TimeInterval = 0.2
     private static let hapticMinInterval: TimeInterval = 0.05
-    /// 拖动手指悬在 max / min 时，按这个间隔重复震动 —— 对齐原生 HIG
-    /// "已到顶 / 已到底"持续提醒。~8Hz 是 iOS 原生硬件键长按节奏。
-    private static let boundarySustainInterval: TimeInterval = 0.12
     private static let boundaryEpsilon: Float = 0.001
 
     private init() {
@@ -76,14 +72,17 @@ final class SystemVolumeManager {
 
     /// UI 拖动写入入口。本地 volume 立刻反映手指位置，再异步写 slider。
     /// 拖动期间 KVO 短路；松手时 syncFromSystem 吸收延迟。
-    /// Haptic：到顶 / 到底时震；手指持续悬在边界还会按 ~8Hz 节奏续震
-    /// （对齐原生 HIG "已到顶/底"持续提醒）。
+    /// Haptic：手指首次穿越到顶 / 到底时震一次。**不**复刻原生硬件键
+    /// "已到顶持续提醒"行为 —— 那是 hardware key 独有的 HIG 反馈，
+    /// 手指拖到顶后保持不动不该继续震（会让 UI 反馈"卡住"感）。
     func setUserVolume(_ newValue: Float) {
         let clamped = max(0, min(1, newValue))
         let oldVolume = volume
         volume = clamped
         writeToSystem(clamped)
-        evaluateBoundaryHaptic(oldVolume: oldVolume, newVolume: clamped)
+        if crossedBoundary(oldVolume: oldVolume, newVolume: clamped) {
+            fireHapticThrottled()
+        }
     }
 
     /// 主动从系统读取一次真实音量。
@@ -173,41 +172,25 @@ final class SystemVolumeManager {
         }
     }
 
-    /// boundary 判定：仅 KVO 路径用 —— 外部音量变化首次穿越 0/1 时震。
-    /// 持续按住硬件键停在边界时 KVO 不会再触发（outputVolume 值不变 →
-    /// 没有 KVO 投递），所以 KVO 路径只能 catch 首次穿越。
-    /// UI 拖动路径走 evaluateBoundaryHaptic，能 catch 首次穿越 + 持续触达。
+    /// 首次穿越 0 / 1 判定。两条路径用：
+    ///   - setUserVolume（UI 拖动）：手指拖到边界震一次；拖回再拖到边界
+    ///     再震 —— 这就是用户期望的"凡触达即反馈"。
+    ///   - evaluateHaptic（KVO 路径，硬件键 / CC / 其他 app）：外部音量
+    ///     首次穿越到 0 / 1 时震。
+    ///
+    /// 关于"硬件键在边界持续按"的原生 HIG 行为：iOS 原生在到顶后再按
+    /// 音量加键仍会震动一下（"你已经到顶了"提醒）。我们能否复刻取决
+    /// 于 KVO 是否在那种"按了但 outputVolume 值没真正变"的情况下还
+    /// 触发投递。实测可能是：iOS 在边界按键时让 outputVolume 抖动一下
+    /// （1.0 → 0.999 → 1.0），那 crossedBoundary 会自然 catch 每次按键。
+    /// 如果未来真机验证发现硬件键在边界再按不震，说明 KVO 不会投递这种
+    /// "假抖动"，到时再考虑别的信号源（如直接监听 UIPress 事件等）。
     private func crossedBoundary(oldVolume: Float, newVolume: Float) -> Bool {
         let hitMax = newVolume >= 1.0 - Self.boundaryEpsilon
             && oldVolume < 1.0 - Self.boundaryEpsilon
         let hitMin = newVolume <= Self.boundaryEpsilon
             && oldVolume > Self.boundaryEpsilon
         return hitMax || hitMin
-    }
-
-    /// UI 拖动专用：手指首次穿越边界 → 立即震；持续悬在边界 →
-    /// 每 boundarySustainInterval (~120ms) 续震一次。对齐原生 HIG。
-    private func evaluateBoundaryHaptic(oldVolume: Float, newVolume: Float) {
-        let atMax = newVolume >= 1.0 - Self.boundaryEpsilon
-        let atMin = newVolume <= Self.boundaryEpsilon
-        guard atMax || atMin else { return }
-
-        let justCrossed = crossedBoundary(oldVolume: oldVolume, newVolume: newVolume)
-        let now = Date()
-
-        if justCrossed {
-            // 首次穿越：立即触发，仅受 50ms 全局节流。
-            if fireHapticThrottled() {
-                lastBoundaryHapticTime = now
-            }
-        } else {
-            // 持续在边界：按 ~120ms 节奏续震。setUserVolume 在 drag
-            // 60Hz 调用，这里把它降到 ~8Hz haptic。
-            guard now.timeIntervalSince(lastBoundaryHapticTime) >= Self.boundarySustainInterval else { return }
-            if fireHapticThrottled() {
-                lastBoundaryHapticTime = now
-            }
-        }
     }
 
     /// 受 50ms 硬节流的 haptic 触发。返回是否真的 fire（让调用方按需更新基准）。
