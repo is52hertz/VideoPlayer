@@ -186,10 +186,12 @@ struct iOSPlayerControls: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        // Fixed-width container sized to the 16:9 video content area,
-        // horizontally centered on screen. Title and progress row
-        // share `VStack(alignment: .leading)` so their leading edges
-        // are guaranteed to coincide on Canvas / simulator / device.
+        // VStack sizes to its widest child (the progressRow HStack),
+        // letting the time digits sit OUTSIDE the 16:9 video bar in
+        // the black letterbox area on landscape phones. Centered
+        // horizontally so the bar (fixed at video width) lands exactly
+        // on the 16:9 video edges. Title and row share `.leading`
+        // alignment so their leading edges always coincide.
         VStack(alignment: .leading, spacing: 12) {
             if !viewModel.videoTitle.isEmpty {
                 Text(viewModel.videoTitle)
@@ -203,25 +205,29 @@ struct iOSPlayerControls: View {
 
             progressRow
         }
-        .frame(width: bottomBarContainerWidth)
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.bottom, isCompactHeight ? 20 : 32)
         .safeAreaPadding(.bottom)
     }
 
-    /// Width of the bottom-bar group. At rest equals the 16:9 video
-    /// content width (so the bar maps to the visible video area in
-    /// landscape, not the black letterbox). Capped below the screen
-    /// width by a minimum side inset so portrait / iPad layouts still
-    /// have breathing room around the time digits.
-    private var bottomBarContainerWidth: CGFloat {
+    /// Width of the progress bar itself. Targets the 16:9 video
+    /// content edges (so the bar lines up with the visible video
+    /// frame on landscape phones), but capped so the surrounding
+    /// time-digit space plus a min side inset always fits on screen
+    /// — needed for portrait / iPad where video fills the screen.
+    private var progressBarWidth: CGFloat {
         guard screenSize.width > 0, screenSize.height > 0 else {
-            return .infinity
+            return 0  // 0 → SwiftUI falls back to intrinsic / flex
         }
         let videoWidth = min(screenSize.width, screenSize.height * (16.0 / 9.0))
         let minSideInset: CGFloat = isPad ? 32 : 20
-        let maxAllowed = max(0, screenSize.width - minSideInset * 2)
-        return min(videoWidth, maxAllowed)
+        // Room reserved on each side for `[digit | 10pt gap]` where
+        // digit ≈ widest realistic monospaced format (H:MM:SS at
+        // 12pt ≈ 56pt). Hardcoding the upper bound is cheap and
+        // avoids a measurement pass.
+        let sideReserve: CGFloat = 10 + 56
+        let maxBar = max(0, screenSize.width - 2 * (minSideInset + sideReserve))
+        return min(videoWidth, maxBar)
     }
 
     private var progressRow: some View {
@@ -244,6 +250,7 @@ struct iOSPlayerControls: View {
                 .allowsHitTesting(false)
 
             progressScrubber
+                .frame(width: progressBarWidth)
 
             Text(formatTime(viewModel.duration, placeholder: !hasDuration))
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
