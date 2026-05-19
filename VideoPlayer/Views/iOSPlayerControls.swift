@@ -186,28 +186,28 @@ struct iOSPlayerControls: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
+        // One shared padded container so the title's leading edge is
+        // guaranteed to match the progress row's leading edge — no
+        // duplicated `.padding`/`.safeAreaPadding` per child, which
+        // could yield slightly different insets on real devices (where
+        // safe-area values are non-zero) versus the Preview canvas.
         VStack(alignment: .leading, spacing: 12) {
             if !viewModel.videoTitle.isEmpty {
                 Text(viewModel.videoTitle)
-                    // HIG: prefer semantic text styles so Dynamic Type +
+                    // HIG: semantic text style so Dynamic Type +
                     // accessibility sizes scale the title automatically.
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                    // Match `progressRow`'s horizontal padding so the
-                    // title's leading edge lines up with the start-time
-                    // label's container edge.
-                    .padding(.horizontal, isPad ? 32 : 20)
-                    .safeAreaPadding(.horizontal)
                     .allowsHitTesting(false)
                     .opacity(isScrubActive ? 0 : 1)
             }
 
             progressRow
-                .padding(.horizontal, isPad ? 32 : 20)
-                .safeAreaPadding(.horizontal)
-                .padding(.bottom, isCompactHeight ? 20 : 32)
-                .safeAreaPadding(.bottom)
         }
+        .padding(.horizontal, isPad ? 32 : 20)
+        .safeAreaPadding(.horizontal)
+        .padding(.bottom, isCompactHeight ? 20 : 32)
+        .safeAreaPadding(.bottom)
     }
 
     private var progressRow: some View {
