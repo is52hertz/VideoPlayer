@@ -35,9 +35,22 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Bump on each tap to retrigger the one-shot rotate symbol effect.
+    // Bump on each tap to retrigger the one-shot rotate / bounce symbol effect.
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
+    @State private var playBounceTrigger: Int = 0
+
+    // Consecutive same-direction taps within `streakWindow` raise the
+    // rotation speed — emulates Apple TV's "tap repeatedly to scrub faster"
+    // feel. Forward and backward streaks are independent.
+    @State private var forwardTapStreak: Int = 0
+    @State private var backwardTapStreak: Int = 0
+    @State private var forwardStreakDecayTask: Task<Void, Never>?
+    @State private var backwardStreakDecayTask: Task<Void, Never>?
+
+    private static let streakWindow: TimeInterval = 0.6
+    private static let streakSpeedStep: Double = 0.35
+    private static let streakMaxBoost: Double = 1.5
 
     var body: some View {
         ZStack {
@@ -164,11 +177,11 @@ struct iOSPlayerControls: View {
         // skip buttons sit smaller on either side. iPad gets the most
         // generous values; compact-height phones (landscape) tighten
         // up so the row still fits above the progress bar.
-        let spacing: CGFloat = isPad ? 96 : (isCompactHeight ? 56 : 72)
-        let playDiameter: CGFloat = isPad ? 112 : (isCompactHeight ? 80 : 88)
-        let playIcon: CGFloat = isPad ? 44 : (isCompactHeight ? 32 : 36)
-        let skipDiameter: CGFloat = isPad ? 80 : (isCompactHeight ? 60 : 64)
-        let skipIcon: CGFloat = isPad ? 30 : (isCompactHeight ? 22 : 24)
+        let spacing: CGFloat = isPad ? 112 : (isCompactHeight ? 64 : 88)
+        let playDiameter: CGFloat = isPad ? 144 : (isCompactHeight ? 96 : 112)
+        let playIcon: CGFloat = isPad ? 56 : (isCompactHeight ? 40 : 46)
+        let skipDiameter: CGFloat = isPad ? 104 : (isCompactHeight ? 72 : 84)
+        let skipIcon: CGFloat = isPad ? 40 : (isCompactHeight ? 28 : 32)
 
         return HStack(spacing: spacing) {
             circlePlaybackButton(diameter: skipDiameter) {
@@ -177,10 +190,16 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise,
-                        options: .nonRepeating.speed(1.0 / PlayerViewModel.buttonSeekAnimationDuration),
+                        options: .nonRepeating.speed(skipRotationSpeed(streak: backwardTapStreak)),
+                        value: backwardSpinTrigger
+                    )
+                    .symbolEffect(
+                        .bounce,
+                        options: .nonRepeating.speed(2.0),
                         value: backwardSpinTrigger
                     )
             } action: {
+                bumpBackwardStreak()
                 backwardSpinTrigger &+= 1
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
@@ -190,7 +209,13 @@ struct iOSPlayerControls: View {
                     .font(.system(size: playIcon, weight: .semibold))
                     .foregroundStyle(.white)
                     .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(
+                        .bounce,
+                        options: .nonRepeating.speed(1.8),
+                        value: playBounceTrigger
+                    )
             } action: {
+                playBounceTrigger &+= 1
                 viewModel.togglePlayPause()
             }
 
@@ -200,13 +225,43 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise,
-                        options: .nonRepeating.speed(1.0 / PlayerViewModel.buttonSeekAnimationDuration),
+                        options: .nonRepeating.speed(skipRotationSpeed(streak: forwardTapStreak)),
+                        value: forwardSpinTrigger
+                    )
+                    .symbolEffect(
+                        .bounce,
+                        options: .nonRepeating.speed(2.0),
                         value: forwardSpinTrigger
                     )
             } action: {
+                bumpForwardStreak()
                 forwardSpinTrigger &+= 1
                 viewModel.seekForward(Self.skipStepSeconds)
             }
+        }
+    }
+
+    private func skipRotationSpeed(streak: Int) -> Double {
+        let base = 1.0 / PlayerViewModel.buttonSeekAnimationDuration
+        let boost = min(Double(max(streak - 1, 0)) * Self.streakSpeedStep, Self.streakMaxBoost)
+        return base * (1.0 + boost)
+    }
+
+    private func bumpForwardStreak() {
+        forwardTapStreak = min(forwardTapStreak + 1, 6)
+        forwardStreakDecayTask?.cancel()
+        forwardStreakDecayTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.streakWindow))
+            if !Task.isCancelled { forwardTapStreak = 0 }
+        }
+    }
+
+    private func bumpBackwardStreak() {
+        backwardTapStreak = min(backwardTapStreak + 1, 6)
+        backwardStreakDecayTask?.cancel()
+        backwardStreakDecayTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.streakWindow))
+            if !Task.isCancelled { backwardTapStreak = 0 }
         }
     }
 
