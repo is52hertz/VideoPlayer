@@ -32,7 +32,11 @@ final class PlayerViewModel {
     #if os(iOS)
     var systemVolume: Float {
         get { SystemVolumeManager.shared.volume }
-        set { SystemVolumeManager.shared.volume = newValue }
+        set { SystemVolumeManager.shared.setUserVolume(newValue) }
+    }
+
+    func setVolumeUserInteracting(_ active: Bool) {
+        SystemVolumeManager.shared.isUserInteracting = active
     }
     #endif
 

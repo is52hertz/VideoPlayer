@@ -1,5 +1,6 @@
 #if os(iOS)
 import Foundation
+import UIKit
 import MediaPlayer
 import AVFoundation
 import Observation
@@ -7,22 +8,55 @@ import Observation
 @Observable
 final class SystemVolumeManager {
     static let shared = SystemVolumeManager()
-    
-    var volume: Float = 0.5 {
+
+    /// 只读对外。改动只能走 setUserVolume(_:)、KVO 内部路径、或 syncFromSystem。
+    /// 拒绝外部直接 = 赋值是设计性的：避免反馈环（KVO 写 volume → didSet 写
+    /// slider → AVAudioSession 内部更新 → KVO 又触发 → ...），并强制 UI 拖动
+    /// 走 setUserVolume 入口，让"是否屏蔽 KVO 回写"的策略集中在这一处。
+    private(set) var volume: Float = 0.5
+
+    /// View 在 drag 期间应置 true。期间 KVO 不回写 volume，避免和手指打架
+    /// （write slider 异步、KVO 即时，前后值会"前进 → 回退"抽搐）。
+    /// 由 true → false 时自动 syncFromSystem，吸收松手后系统真实落点。
+    var isUserInteracting: Bool = false {
         didSet {
-            setSystemVolume(volume)
+            guard oldValue && !isUserInteracting else { return }
+            syncFromSystem()
         }
     }
-    
+
     private var volumeView = MPVolumeView()
     private var volumeSlider: UISlider?
-    private var observer: NSKeyValueObservation?
+    private var kvoObserver: NSKeyValueObservation?
+    private var foregroundObserver: NSObjectProtocol?
     private static var didLogSliderLookupFailure = false
 
     private init() {
         setupVolumeView()
         observeSystemVolume()
+        observeForeground()
     }
+
+    // MARK: - Public API
+
+    /// UI 拖动写入入口。本地 volume 立刻反映手指位置，再异步写 slider。
+    /// 拖动期间 KVO 短路；松手时 syncFromSystem 吸收延迟。
+    func setUserVolume(_ newValue: Float) {
+        let clamped = max(0, min(1, newValue))
+        volume = clamped
+        writeToSystem(clamped)
+    }
+
+    /// 主动从 AVAudioSession 读取一次系统真实音量。
+    /// 触发场景：松手（isUserInteracting false 跳变）、回前台。
+    func syncFromSystem() {
+        let truth = AVAudioSession.sharedInstance().outputVolume
+        if abs(volume - truth) > 0.005 {
+            volume = truth
+        }
+    }
+
+    // MARK: - Setup
 
     private func setupVolumeView() {
         for view in volumeView.subviews {
@@ -35,28 +69,34 @@ final class SystemVolumeManager {
     }
 
     private func observeSystemVolume() {
-        // Audio session category + activation lives in AudioSessionManager.
-        // We only observe outputVolume here so the UI tracks hardware-key /
-        // Control Center / other-app volume changes.
-        observer = AVAudioSession.sharedInstance().observe(\.outputVolume, options: [.new]) { [weak self] session, change in
-            guard let self = self, let newVolume = change.newValue else { return }
+        kvoObserver = AVAudioSession.sharedInstance().observe(\.outputVolume, options: [.new]) { [weak self] _, change in
+            guard let self, let newVolume = change.newValue else { return }
             Task { @MainActor in
-                if abs(self.volume - newVolume) > 0.01 {
+                // 拖动期间手指 = 唯一真理。松手由 isUserInteracting.didSet 统一吸收。
+                guard !self.isUserInteracting else { return }
+                if abs(self.volume - newVolume) > 0.005 {
                     self.volume = newVolume
                 }
             }
         }
     }
 
-    private func setSystemVolume(_ newVolume: Float) {
+    private func observeForeground() {
+        // App 在后台时 KVO 投递不可靠（系统会合并 / 暂停）。回前台主动重读。
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.syncFromSystem() }
+        }
+    }
+
+    private func writeToSystem(_ value: Float) {
         guard let slider = volumeSlider else {
-            // MPVolumeView's internal UISlider has historically been the only
-            // public-API path third-party code has to *write* system volume.
-            // If a future iOS refactors the subview hierarchy and lookup in
-            // setupVolumeView() returns nil, swallowing the write would
-            // silently break the volume slider. We still update our own
-            // @Observable `volume` so the UI stays consistent; the KVO on
-            // outputVolume will pull truth back if anything else moves it.
+            // MPVolumeView 内部 UISlider 查找失败 fallback：仍保留本地 volume
+            // （UI 已经反映手指），但 write 不达；KVO 也无法回流写值。
+            // 仅首次报警，避免日志爆炸。
             if !Self.didLogSliderLookupFailure {
                 Self.didLogSliderLookupFailure = true
                 print("SystemVolumeManager: MPVolumeView's inner UISlider not found; system-volume writes are inert. Read path (AVAudioSession.outputVolume + KVO) still works.")
@@ -64,8 +104,8 @@ final class SystemVolumeManager {
             return
         }
         Task { @MainActor in
-            if abs(slider.value - newVolume) > 0.01 {
-                slider.value = newVolume
+            if abs(slider.value - value) > 0.005 {
+                slider.value = value
             }
         }
     }

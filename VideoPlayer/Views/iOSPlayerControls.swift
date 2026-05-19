@@ -557,6 +557,9 @@ struct iOSPlayerControls: View {
         .frame(height: 28)
         .onChange(of: isVolumeScrubbing) { _, scrubbing in
             viewModel.isInteractingWithControls = scrubbing
+            // 拖动期间屏蔽 KVO 对 UI 的回写，避免 write 异步延迟 vs read 即时
+            // 造成的"前进-回退"抽搐；松手时由 SystemVolumeManager 内部 sync 吸收。
+            viewModel.setVolumeUserInteracting(scrubbing)
         }
     }
 
