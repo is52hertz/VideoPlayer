@@ -224,11 +224,13 @@ struct iOSPlayerControls: View {
         }
         let videoWidth = min(screenSize.width, screenSize.height * (16.0 / 9.0))
         let minSideInset: CGFloat = isPad ? 32 : 20
-        // Landscape phone: letterbox to the sides of a 16:9 video has
-        // plenty of room for digits, so the bar can match the full
-        // video width without crowding.
+        // Landscape phone: letterbox has plenty of room for digits, so
+        // give the bar a touch more than the 16:9 width. Empirically a
+        // +20pt bump puts the bar visually flush with the video edges
+        // (and gently into the letterbox), which is what the user
+        // actually wants — no fancier math needed.
         if videoWidth + 2 * minSideInset < screenSize.width {
-            return videoWidth
+            return videoWidth + 20
         }
         // No letterbox room: reserve worst-case `H:MM:SS` digit width
         // plus a 10pt gap on each side.
