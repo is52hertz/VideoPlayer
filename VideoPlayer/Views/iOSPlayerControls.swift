@@ -31,6 +31,14 @@ struct iOSPlayerControls: View {
     private static let timeLabelActiveScale: CGFloat = 16.0 / 12.0
     private var timeLabelScale: CGFloat { isScrubActive ? Self.timeLabelActiveScale : 1.0 }
 
+    // Step for forward/backward skip buttons. Future: surface as a Settings
+    // option; keep here for now so the call sites have a single source.
+    private static let skipStepSeconds: TimeInterval = 10
+
+    // Bump on each tap to retrigger the one-shot rotate symbol effect.
+    @State private var forwardSpinTrigger: Int = 0
+    @State private var backwardSpinTrigger: Int = 0
+
     var body: some View {
         ZStack {
             // MPVolumeView must stay in hierarchy at all times for hardware buttons to work.
@@ -152,31 +160,65 @@ struct iOSPlayerControls: View {
     // MARK: - Playback (center)
 
     private var playbackButtons: some View {
-        HStack(spacing: isPad ? 56 : (isCompactHeight ? 36 : 48)) {
-            glassPlaybackButton(systemName: "backward.fill", size: isPad ? 26 : 22) {
-                viewModel.seekBackward(15)
+        // Apple-TV-style hierarchy: bigger central play, larger gaps,
+        // skip buttons sit smaller on either side. iPad gets the most
+        // generous values; compact-height phones (landscape) tighten
+        // up so the row still fits above the progress bar.
+        let spacing: CGFloat = isPad ? 96 : (isCompactHeight ? 56 : 72)
+        let playDiameter: CGFloat = isPad ? 112 : (isCompactHeight ? 80 : 88)
+        let playIcon: CGFloat = isPad ? 44 : (isCompactHeight ? 32 : 36)
+        let skipDiameter: CGFloat = isPad ? 80 : (isCompactHeight ? 60 : 64)
+        let skipIcon: CGFloat = isPad ? 30 : (isCompactHeight ? 22 : 24)
+
+        return HStack(spacing: spacing) {
+            circlePlaybackButton(diameter: skipDiameter) {
+                Image(systemName: "10.arrow.trianglehead.counterclockwise")
+                    .font(.system(size: skipIcon, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolEffect(
+                        .rotate.counterClockwise,
+                        options: .nonRepeating.speed(1.0 / PlayerViewModel.buttonSeekAnimationDuration),
+                        value: backwardSpinTrigger
+                    )
+            } action: {
+                backwardSpinTrigger &+= 1
+                viewModel.seekBackward(Self.skipStepSeconds)
             }
 
-            glassPlaybackButton(systemName: playPauseIcon, size: isPad ? 40 : 32) {
+            circlePlaybackButton(diameter: playDiameter) {
+                Image(systemName: playPauseIcon)
+                    .font(.system(size: playIcon, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .contentTransition(.symbolEffect(.replace))
+            } action: {
                 viewModel.togglePlayPause()
             }
 
-            glassPlaybackButton(systemName: "forward.fill", size: isPad ? 26 : 22) {
-                viewModel.seekForward(15)
+            circlePlaybackButton(diameter: skipDiameter) {
+                Image(systemName: "10.arrow.trianglehead.clockwise")
+                    .font(.system(size: skipIcon, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolEffect(
+                        .rotate.clockwise,
+                        options: .nonRepeating.speed(1.0 / PlayerViewModel.buttonSeekAnimationDuration),
+                        value: forwardSpinTrigger
+                    )
+            } action: {
+                forwardSpinTrigger &+= 1
+                viewModel.seekForward(Self.skipStepSeconds)
             }
         }
     }
 
-    private func glassPlaybackButton(systemName: String, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: size, weight: .semibold))
-            .foregroundStyle(.white)
-            .frame(width: size + 24, height: size + 24)
-            .opacity(isScrubActive ? 0 : 1)
-            .padding(.horizontal, isPad ? 16 : 12)
-            .padding(.vertical, isPad ? 14 : 10)
-            .contentShape(Capsule())
-            .glassEffect(.clear.interactive(), in: Capsule())
+    private func circlePlaybackButton<Label: View>(
+        diameter: CGFloat,
+        @ViewBuilder label: () -> Label,
+        action: @escaping () -> Void
+    ) -> some View {
+        label()
+            .frame(width: diameter, height: diameter)
+            .contentShape(Circle())
+            .glassEffect(.clear.interactive(), in: Circle())
             .scaleEffect(isScrubActive ? 0.6 : 1.0)
             .opacity(isScrubActive ? 0 : 1)
             .onTapGesture { action() }

@@ -59,7 +59,7 @@ final class PlayerViewModel {
 
     private var autoHideTask: Task<Void, Never>?
 
-    private static let buttonSeekAnimationDuration: TimeInterval = 0.35
+    static let buttonSeekAnimationDuration: TimeInterval = 0.35
     /// True while the bar is mid-ease-out from a ±15s tap. Suppresses
     /// `onTimeUpdate` writes so the periodic observer doesn't stomp the
     /// animated `currentTime` mid-transition.
