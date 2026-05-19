@@ -21,10 +21,12 @@ struct iOSPlayerControls: View {
 
     private var isScrubActive: Bool { isScrubbing || isFlinging }
 
-    // Scale visually from center via `.scaleEffect` so the bar isn't
-    // squeezed inward — the text frame keeps its base width, and the
-    // 16/12 magnification overflows symmetrically (outward + inward).
-    // Gives an Apple-TV-style "lift" feel rather than a layout reflow.
+    // Scale visually via `.scaleEffect` so the bar isn't squeezed —
+    // the text frame keeps its base width and 16/12 magnification
+    // overflows the frame. Anchor is set per-side at the call site
+    // (trailing for left label, leading for right label) so growth
+    // projects *outward only* (away from the bar), preserving the
+    // resting-state gap and giving an Apple-TV-style "lift" feel.
     private static let timeLabelBaseSize: CGFloat = 12
     private static let timeLabelActiveScale: CGFloat = 16.0 / 12.0
     private var timeLabelScale: CGFloat { isScrubActive ? Self.timeLabelActiveScale : 1.0 }
@@ -210,7 +212,7 @@ struct iOSPlayerControls: View {
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
                 .frame(minWidth: 42, alignment: .trailing)
-                .scaleEffect(timeLabelScale, anchor: .center)
+                .scaleEffect(timeLabelScale, anchor: .trailing)
                 .allowsHitTesting(false)
 
             progressScrubber
@@ -219,7 +221,7 @@ struct iOSPlayerControls: View {
                 .font(.system(size: Self.timeLabelBaseSize).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.8))
                 .frame(minWidth: 42, alignment: .leading)
-                .scaleEffect(timeLabelScale, anchor: .center)
+                .scaleEffect(timeLabelScale, anchor: .leading)
                 .allowsHitTesting(false)
         }
     }
