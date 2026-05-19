@@ -35,6 +35,16 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
+    // Experiment: two parallel attempts to actually control rotate
+    // duration on iOS 26.
+    //   (a) `.repeat(.periodic(1)).speed(...)` — `.repeat` path may
+    //       honor `.speed` where `.nonRepeating` does not.
+    //   (b) `withAnimation(.linear(duration:))` around the trigger
+    //       bump — some SwiftUI symbol effects pick up the surrounding
+    //       Transaction animation as their timing.
+    private static let rotationTargetDuration: TimeInterval = 0.12
+    private static let rotationSpeed: Double = 5.0
+
     // Each tap fires one `.rotate.byLayer` cycle via discrete `value:`
     // trigger. iOS 26 lets multiple in-flight cycles overlap, so rapid
     // taps visually pile up into a faster spin — no manual `.speed`,
@@ -196,12 +206,14 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise.byLayer,
-                        options: .nonRepeating,
+                        options: .repeat(.periodic(1)).speed(Self.rotationSpeed),
                         value: backwardSpinTrigger
                     )
                     .scaleEffect(backwardTapPulse)
             } action: {
-                backwardSpinTrigger &+= 1
+                withAnimation(.linear(duration: Self.rotationTargetDuration)) {
+                    backwardSpinTrigger &+= 1
+                }
                 pulseBackward()
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
@@ -227,12 +239,14 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise.byLayer,
-                        options: .nonRepeating,
+                        options: .repeat(.periodic(1)).speed(Self.rotationSpeed),
                         value: forwardSpinTrigger
                     )
                     .scaleEffect(forwardTapPulse)
             } action: {
-                forwardSpinTrigger &+= 1
+                withAnimation(.linear(duration: Self.rotationTargetDuration)) {
+                    forwardSpinTrigger &+= 1
+                }
                 pulseForward()
                 viewModel.seekForward(Self.skipStepSeconds)
             }
