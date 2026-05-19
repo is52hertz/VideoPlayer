@@ -181,7 +181,10 @@ struct iOSPlayerControls: View {
         let playDiameter: CGFloat = isPad ? 144 : (isCompactHeight ? 96 : 112)
         let playIcon: CGFloat = isPad ? 56 : (isCompactHeight ? 40 : 46)
         let skipDiameter: CGFloat = isPad ? 104 : (isCompactHeight ? 72 : 84)
-        let skipIcon: CGFloat = isPad ? 40 : (isCompactHeight ? 28 : 32)
+        // Skip glyphs ("10.arrow.trianglehead.*") read smaller than the
+        // play/pause fill, so push them to ~55% of the circle to match
+        // the visual weight of the central play button.
+        let skipIcon: CGFloat = isPad ? 58 : (isCompactHeight ? 40 : 46)
 
         return HStack(spacing: spacing) {
             circlePlaybackButton(diameter: skipDiameter) {
