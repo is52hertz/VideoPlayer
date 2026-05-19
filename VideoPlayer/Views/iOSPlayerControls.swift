@@ -35,29 +35,18 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Skip-icon rotation: `.rotate.byLayer` runs as a `.repeating` effect
-    // gated by an `isActive` flag — `.speed(_:)` is silently ignored on
-    // `value:`-triggered one-shots, so we drive timing ourselves.
-    //
-    // Per-session contract: total rotations played == total taps. Each
-    // tap also boosts `.speed`, so consecutive taps make every remaining
-    // rotation faster. Session ends when the schedule expires; tapCount
-    // and speed reset for the next session.
-    private static let rotationBaselineDuration: TimeInterval = 0.6
-    private static let rotationBaseSpeed: Double = 5.0
-    private static let rotationSpeedStep: Double = 1.5
-    private static let rotationMaxSpeed: Double = 12.0
+    // Each tap fires one `.rotate.byLayer` cycle via discrete `value:`
+    // trigger. iOS 26 lets multiple in-flight cycles overlap, so rapid
+    // taps visually pile up into a faster spin — no manual `.speed`,
+    // no `.repeating` gating, no session timers needed.
+    @State private var forwardSpinTrigger: Int = 0
+    @State private var backwardSpinTrigger: Int = 0
 
-    @State private var forwardIsSpinning: Bool = false
-    @State private var backwardIsSpinning: Bool = false
-    @State private var forwardTapCount: Int = 0
-    @State private var backwardTapCount: Int = 0
-    @State private var forwardSessionStart: Date?
-    @State private var backwardSessionStart: Date?
-    @State private var forwardCurrentSpeed: Double = 5.0
-    @State private var backwardCurrentSpeed: Double = 5.0
-    @State private var forwardSpinStopTask: Task<Void, Never>?
-    @State private var backwardSpinStopTask: Task<Void, Never>?
+    // Per-tap scale pulse — independent of SymbolEffect, so every tap
+    // has crisp physical feedback regardless of how iOS handles cycle
+    // overlap.
+    @State private var forwardTapPulse: Double = 1.0
+    @State private var backwardTapPulse: Double = 1.0
 
     @State private var playBounceTrigger: Int = 0
 
@@ -207,11 +196,13 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise.byLayer,
-                        options: .repeating.speed(backwardCurrentSpeed),
-                        isActive: backwardIsSpinning
+                        options: .nonRepeating,
+                        value: backwardSpinTrigger
                     )
+                    .scaleEffect(backwardTapPulse)
             } action: {
-                spinBackward()
+                backwardSpinTrigger &+= 1
+                pulseBackward()
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
@@ -236,78 +227,30 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise.byLayer,
-                        options: .repeating.speed(forwardCurrentSpeed),
-                        isActive: forwardIsSpinning
+                        options: .nonRepeating,
+                        value: forwardSpinTrigger
                     )
+                    .scaleEffect(forwardTapPulse)
             } action: {
-                spinForward()
+                forwardSpinTrigger &+= 1
+                pulseForward()
                 viewModel.seekForward(Self.skipStepSeconds)
             }
         }
     }
 
-    private func spinForward() {
-        if !forwardIsSpinning {
-            forwardTapCount = 0
-            forwardSessionStart = Date()
-        }
-        forwardTapCount += 1
-        forwardCurrentSpeed = min(
-            Self.rotationBaseSpeed + Double(forwardTapCount - 1) * Self.rotationSpeedStep,
-            Self.rotationMaxSpeed
-        )
-        forwardIsSpinning = true
-
-        let totalDuration = Double(forwardTapCount) * (Self.rotationBaselineDuration / forwardCurrentSpeed)
-        let elapsed = forwardSessionStart.map { Date().timeIntervalSince($0) } ?? 0
-        let remaining = max(0, totalDuration - elapsed)
-
-        forwardSpinStopTask?.cancel()
-        forwardSpinStopTask = Task { @MainActor in
-            if remaining > 0 {
-                try? await Task.sleep(for: .seconds(remaining))
-            }
-            if !Task.isCancelled { resetForwardSpin() }
+    private func pulseForward() {
+        forwardTapPulse = 0.88
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) {
+            forwardTapPulse = 1.0
         }
     }
 
-    private func resetForwardSpin() {
-        forwardIsSpinning = false
-        forwardTapCount = 0
-        forwardSessionStart = nil
-        forwardCurrentSpeed = Self.rotationBaseSpeed
-    }
-
-    private func spinBackward() {
-        if !backwardIsSpinning {
-            backwardTapCount = 0
-            backwardSessionStart = Date()
+    private func pulseBackward() {
+        backwardTapPulse = 0.88
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) {
+            backwardTapPulse = 1.0
         }
-        backwardTapCount += 1
-        backwardCurrentSpeed = min(
-            Self.rotationBaseSpeed + Double(backwardTapCount - 1) * Self.rotationSpeedStep,
-            Self.rotationMaxSpeed
-        )
-        backwardIsSpinning = true
-
-        let totalDuration = Double(backwardTapCount) * (Self.rotationBaselineDuration / backwardCurrentSpeed)
-        let elapsed = backwardSessionStart.map { Date().timeIntervalSince($0) } ?? 0
-        let remaining = max(0, totalDuration - elapsed)
-
-        backwardSpinStopTask?.cancel()
-        backwardSpinStopTask = Task { @MainActor in
-            if remaining > 0 {
-                try? await Task.sleep(for: .seconds(remaining))
-            }
-            if !Task.isCancelled { resetBackwardSpin() }
-        }
-    }
-
-    private func resetBackwardSpin() {
-        backwardIsSpinning = false
-        backwardTapCount = 0
-        backwardSessionStart = nil
-        backwardCurrentSpeed = Self.rotationBaseSpeed
     }
 
     private func circlePlaybackButton<Label: View>(
