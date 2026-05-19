@@ -38,11 +38,14 @@ struct iOSPlayerControls: View {
     // SF Symbol's `.rotate.*.byLayer` one-shot has an intrinsic duration
     // of ~0.6s for a full layer rotation. `SymbolEffectOptions.speed(_:)`
     // is the only timing knob (no explicit duration API), so we derive a
-    // multiplier that lands the rotation on the same wall-clock target
-    // as the scrubber's ease-out — keeping icon spin + bar tween in sync.
+    // multiplier from a *target rotation duration* that is intentionally
+    // shorter than the scrubber's 0.3s ease-out — the icon spin reads
+    // snappier than the bar, which keeps the tap feedback punchy without
+    // forcing the progress bar to overshoot or stutter.
     private static let rotationSymbolBaselineDuration: TimeInterval = 0.6
+    private static let rotationSymbolTargetDuration: TimeInterval = 0.18
     private static var rotationSymbolSpeed: Double {
-        rotationSymbolBaselineDuration / PlayerViewModel.buttonSeekAnimationDuration
+        rotationSymbolBaselineDuration / rotationSymbolTargetDuration
     }
 
     // Bump on each tap to retrigger the one-shot per-layer rotate +
