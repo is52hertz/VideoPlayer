@@ -189,9 +189,14 @@ struct iOSPlayerControls: View {
         VStack(alignment: .leading, spacing: 12) {
             if !viewModel.videoTitle.isEmpty {
                 Text(viewModel.videoTitle)
-                    .font(.headline)
+                    // HIG: prefer semantic text styles so Dynamic Type +
+                    // accessibility sizes scale the title automatically.
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, isPad ? 56 : 40)
+                    // Match `progressRow`'s horizontal padding so the
+                    // title's leading edge lines up with the start-time
+                    // label's container edge.
+                    .padding(.horizontal, isPad ? 32 : 20)
                     .safeAreaPadding(.horizontal)
                     .allowsHitTesting(false)
                     .opacity(isScrubActive ? 0 : 1)
@@ -450,5 +455,45 @@ private func makePreviewVM() -> PlayerViewModel {
         iOSPlayerControls()
     }
     .environment(makePreviewVM())
+}
+
+// MARK: - Overflow-stress previews (white background, HH:MM:SS)
+
+/// Long-duration VM for testing how the outward-anchored time-label
+/// scale behaves when both labels render `H:MM:SS` (7 chars) against a
+/// bright frame. Drag the scrubber in the canvas to activate scrub
+/// state and observe whether the magnified labels clip against the
+/// safe-area edges or push past the bar.
+private func makeLongDurationPreviewVM() -> PlayerViewModel {
+    let vm = PlayerViewModel()
+    vm.videoTitle = "Stress-Test.HH-MM-SS.mkv"
+    vm.currentTime = 36_000          // 10:00:00 — widest plausible left label
+    vm.duration    = 45_296          // 12:34:56 — widest plausible right label
+    vm.state       = .paused
+    return vm
+}
+
+#Preview("White BG · iPhone Portrait · HH:MM:SS") {
+    ZStack {
+        Color.white.ignoresSafeArea()
+        iOSPlayerControls()
+    }
+    .environment(makeLongDurationPreviewVM())
+}
+
+#Preview("White BG · iPhone Landscape · HH:MM:SS", traits: .landscapeLeft) {
+    ZStack {
+        Color.white.ignoresSafeArea()
+        iOSPlayerControls()
+    }
+    .environment(makeLongDurationPreviewVM())
+}
+
+#Preview("White BG · iPad · HH:MM:SS") {
+    ZStack {
+        Color.white.ignoresSafeArea()
+        iOSPlayerControls()
+    }
+    .environment(makeLongDurationPreviewVM())
 }
 #endif
