@@ -49,10 +49,9 @@ struct VideoPlayerApp: App {
                 .onChange(of: scenePhase) { _, phase in
                     // SwiftUI scenePhase 是 scene-based app 上最可靠的生命周期信号；
                     // 作为 SystemVolumeManager 内部 NotificationCenter 路径的双保险，
-                    // 回 .active 时再触发一次 syncFromSystem，确保后台期间外部改的
-                    // 系统音量能反映到 UI。
+                    // 回 .active 时做高鲁棒性多次重读。
                     if phase == .active {
-                        SystemVolumeManager.shared.syncFromSystem()
+                        SystemVolumeManager.shared.resyncWithRetries()
                     }
                 }
         }

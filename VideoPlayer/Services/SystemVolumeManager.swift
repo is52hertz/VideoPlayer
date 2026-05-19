@@ -47,12 +47,34 @@ final class SystemVolumeManager {
         writeToSystem(clamped)
     }
 
-    /// 主动从 AVAudioSession 读取一次系统真实音量。
-    /// 触发场景：松手（isUserInteracting false 跳变）、回前台。
+    /// 主动从系统读取一次真实音量。
+    /// 触发场景：松手（isUserInteracting false 跳变）、回前台、scenePhase = .active。
+    ///
+    /// 真值源优先级：
+    ///   1. MPVolumeView 内部 slider.value —— 实时双向绑定到系统音量，
+    ///      在 app 后台时若用户外部改音量它也会跟着变；didBecomeActive
+    ///      时立即就是新值，不像 AVAudioSession.outputVolume 那样有
+    ///      会话激活后短暂返回 stale 的窗口期。
+    ///   2. AVAudioSession.outputVolume —— fallback。
     func syncFromSystem() {
-        let truth = AVAudioSession.sharedInstance().outputVolume
+        let truth: Float = volumeSlider?.value ?? AVAudioSession.sharedInstance().outputVolume
         if abs(volume - truth) > 0.005 {
             volume = truth
+        }
+    }
+
+    /// 后台 → 前台 / scenePhase 变化触发的高鲁棒性同步。
+    /// 现在 + 100 + 300 + 600 + 1200ms 共 5 次重读，覆盖系统刷新延迟。
+    /// 后面几次大概率读到的是同一个稳定值，多调几次代价可忽略。
+    func resyncWithRetries() {
+        Task { @MainActor in
+            let delays: [Int] = [0, 100, 300, 600, 1200]
+            for delay in delays {
+                if delay > 0 {
+                    try? await Task.sleep(for: .milliseconds(delay))
+                }
+                syncFromSystem()
+            }
         }
     }
 
@@ -82,22 +104,14 @@ final class SystemVolumeManager {
     }
 
     private func observeForeground() {
-        // App 在后台时 KVO 投递不可靠（系统合并 / 暂停）。回前台主动重读。
-        // 用 didBecomeActive 而非 willEnterForeground：后者在 scene-based app
-        // 上不一定触发，且 AVAudioSession.outputVolume 在 willEnterForeground
-        // 时常仍是 stale 值。didBecomeActive 时 session 已 reactivate。
-        // 再保险：300ms 后追读一次，吸收 session 刚激活时 outputVolume 仍未
-        // 刷新的短暂窗口（实测有几十~几百毫秒的滞后）。
+        // 双路径：本观察器 + VideoPlayerApp 里 scenePhase = .active 的
+        // SystemVolumeManager.shared.resyncWithRetries() 调用。哪个先到都行。
         foregroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.syncFromSystem()
-                try? await Task.sleep(for: .milliseconds(300))
-                self?.syncFromSystem()
-            }
+            self?.resyncWithRetries()
         }
     }
 
