@@ -150,26 +150,46 @@ struct iOSPlayerControls: View {
     }
 
     private var volumePill: some View {
-        HStack(spacing: 10) {
-            Text("\(Int(viewModel.systemVolume * 100))%")
-                .font(.system(size: 12).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.85))
-                .opacity(isScrubActive ? 0 : 1)
+        HStack(spacing: 12) {
+            // TODO: 后续可还原百分比显示。当前 Apple-TV-style 设计省略该信息让 UI 更克制。
+            // Text("\(Int(viewModel.systemVolume * 100))%")
+            //     .font(.system(size: 12).monospacedDigit())
+            //     .foregroundStyle(.white.opacity(0.85))
+            //     .opacity(isScrubActive ? 0 : 1)
 
             volumeScrubber
-                .frame(width: isPad ? 110 : 70)
+                .frame(width: isPad ? 144 : 96)
                 .opacity(isScrubActive ? 0 : 1)
 
-            Image(systemName: "speaker.wave.3.fill")
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.85))
+            Image(systemName: volumeIconSystemName, variableValue: volumeIconVariableValue)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .contentTransition(.symbolEffect(.replace.downUp))
+                .animation(.smooth(duration: 0.25), value: volumeIconVariableValue)
+                .animation(.smooth(duration: 0.25), value: volumeIconSystemName)
                 .opacity(isScrubActive ? 0 : 1)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .glassEffect(.clear.interactive(), in: Capsule())
         .scaleEffect(isScrubActive ? 0.6 : 1.0)
         .opacity(isScrubActive ? 0 : 1)
+    }
+
+    private var volumeIconSystemName: String {
+        viewModel.systemVolume < 0.001 ? "speaker.slash.fill" : "speaker.wave.3.fill"
+    }
+
+    /// 0 ｜ 1/3 ｜ 2/3 ｜ 1 四档，喂给 SF Symbol 的 variableValue 让
+    /// speaker.wave.3.fill 渐进展示 0/1/2/3 条波纹。
+    private var volumeIconVariableValue: Double {
+        let v = Double(viewModel.systemVolume)
+        switch v {
+        case ..<0.001:      return 0
+        case ..<(1.0 / 3):  return 0.34
+        case ..<(2.0 / 3):  return 0.67
+        default:            return 1.0
+        }
     }
 
     // MARK: - Playback (center)
@@ -488,21 +508,36 @@ struct iOSPlayerControls: View {
     }
 
     private var volumeScrubber: some View {
-        let barHeight: CGFloat = isVolumeScrubbing ? 12 : 6
+        // 恒定高度：与主进度条不同，音量条不在拖动时拔高。
+        let barHeight: CGFloat = 8
         return GeometryReader { geo in
+            let progress = max(0, min(1, CGFloat(viewModel.systemVolume)))
             VStack {
                 Spacer()
                 ZStack(alignment: .leading) {
                     Capsule()
                         .fill(.white.opacity(0.3))
                         .frame(height: barHeight)
+
+                    // 复刻主进度条的 leading-aligned Rectangle mask：
+                    // 整条 Capsule 永远存在，只露出 progress 这段宽度。
+                    // 当 fill 宽 < barHeight 时 leading 端是曲面切片而非方块。
                     Capsule()
                         .fill(.white)
-                        .frame(width: geo.size.width * CGFloat(viewModel.systemVolume), height: barHeight)
+                        .frame(height: barHeight)
+                        .mask(alignment: .leading) {
+                            Rectangle()
+                                .frame(width: geo.size.width * progress)
+                        }
                 }
+                .animation(
+                    isVolumeScrubbing
+                        ? nil
+                        : .easeOut(duration: PlayerViewModel.buttonSeekAnimationDuration),
+                    value: viewModel.systemVolume
+                )
                 Spacer()
             }
-            .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.6), value: isVolumeScrubbing)
             .contentShape(Rectangle())
             .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
