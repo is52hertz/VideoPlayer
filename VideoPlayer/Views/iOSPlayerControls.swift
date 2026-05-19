@@ -42,8 +42,8 @@ struct iOSPlayerControls: View {
     //   (b) `withAnimation(.linear(duration:))` around the trigger
     //       bump — some SwiftUI symbol effects pick up the surrounding
     //       Transaction animation as their timing.
-    private static let rotationTargetDuration: TimeInterval = 0.12
-    private static let rotationSpeed: Double = 5.0
+    private static let rotationTargetDuration: TimeInterval = 0.05
+    private static let rotationSpeed: Double = 20.0
 
     // Each tap fires one `.rotate.byLayer` cycle via discrete `value:`
     // trigger. iOS 26 lets multiple in-flight cycles overlap, so rapid
