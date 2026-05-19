@@ -35,14 +35,10 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // SF Symbol rotate speed for the skip buttons. Driven via the
-    // `RotatingSymbolImage` UIKit bridge below — SwiftUI's
-    // `.symbolEffect` silently drops `.speed(_:)` for `.rotate`, but
-    // UIImageView.addSymbolEffect honors it. 5× ≈ a ~0.12s spin.
-    private static let rotationSpeed: Double = 20.0
-
-    // Each tap bumps the trigger; the UIKit bridge fires one full
-    // `.rotate.*.byLayer` cycle via addSymbolEffect on every change.
+    // Each tap fires one `.rotate.byLayer` cycle via discrete `value:`
+    // trigger. iOS 26 lets multiple in-flight cycles overlap, so rapid
+    // taps visually pile up into a faster spin — no manual `.speed`,
+    // no `.repeating` gating, no session timers needed.
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
 
@@ -195,17 +191,15 @@ struct iOSPlayerControls: View {
 
         return HStack(spacing: spacing) {
             circlePlaybackButton(diameter: skipDiameter) {
-                RotatingSymbolImage(
-                    systemName: "10.arrow.trianglehead.counterclockwise",
-                    pointSize: skipIcon,
-                    weight: .semibold,
-                    tintColor: .white,
-                    clockwise: false,
-                    speed: Self.rotationSpeed,
-                    spinTrigger: backwardSpinTrigger
-                )
-                .frame(width: skipIcon * 1.4, height: skipIcon * 1.4)
-                .scaleEffect(backwardTapPulse)
+                Image(systemName: "10.arrow.trianglehead.counterclockwise")
+                    .font(.system(size: skipIcon, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolEffect(
+                        .rotate.counterClockwise.byLayer,
+                        options: .nonRepeating,
+                        value: backwardSpinTrigger
+                    )
+                    .scaleEffect(backwardTapPulse)
             } action: {
                 backwardSpinTrigger &+= 1
                 pulseBackward()
@@ -228,17 +222,15 @@ struct iOSPlayerControls: View {
             }
 
             circlePlaybackButton(diameter: skipDiameter) {
-                RotatingSymbolImage(
-                    systemName: "10.arrow.trianglehead.clockwise",
-                    pointSize: skipIcon,
-                    weight: .semibold,
-                    tintColor: .white,
-                    clockwise: true,
-                    speed: Self.rotationSpeed,
-                    spinTrigger: forwardSpinTrigger
-                )
-                .frame(width: skipIcon * 1.4, height: skipIcon * 1.4)
-                .scaleEffect(forwardTapPulse)
+                Image(systemName: "10.arrow.trianglehead.clockwise")
+                    .font(.system(size: skipIcon, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolEffect(
+                        .rotate.clockwise.byLayer,
+                        options: .nonRepeating,
+                        value: forwardSpinTrigger
+                    )
+                    .scaleEffect(forwardTapPulse)
             } action: {
                 forwardSpinTrigger &+= 1
                 pulseForward()
@@ -560,94 +552,6 @@ struct VolumeViewWrapper: UIViewRepresentable {
         return view
     }
     func updateUIView(_ uiView: MediaPlayer.MPVolumeView, context: Context) {}
-}
-
-/// UIKit bridge for `.rotate.byLayer` with real speed control.
-///
-/// Critical detail: `UISymbolEffectOptions.speed(_:)` only applies to
-/// *indefinite* (repeating) symbol effects, never to discrete ones —
-/// `.nonRepeating.speed(X)` on `.rotate` is a no-op on both SwiftUI
-/// and UIKit. The working pattern is:
-///   1. Start a `.repeating.speed(X)` rotation (truly honors speed).
-///   2. Schedule a removal after one cycle's worth of wall-clock time
-///      so visually we get a one-shot fast spin.
-/// Connected taps cancel and reschedule the removal, extending the
-/// active spin without restart artifacts.
-private struct RotatingSymbolImage: UIViewRepresentable {
-    let systemName: String
-    let pointSize: CGFloat
-    let weight: UIImage.SymbolWeight
-    let tintColor: UIColor
-    let clockwise: Bool
-    let speed: Double
-    let spinTrigger: Int
-
-    /// SF Symbol's intrinsic .rotate.byLayer cycle at speed=1.
-    private static let baselineCycleDuration: TimeInterval = 0.6
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(lastTrigger: spinTrigger, lastSystemName: systemName)
-    }
-
-    func makeUIView(context: Context) -> UIImageView {
-        let view = UIImageView()
-        view.contentMode = .center
-        view.tintColor = tintColor
-        view.preferredSymbolConfiguration = UIImage.SymbolConfiguration(
-            pointSize: pointSize, weight: weight
-        )
-        view.image = UIImage(systemName: systemName)
-        view.setContentHuggingPriority(.required, for: .horizontal)
-        view.setContentHuggingPriority(.required, for: .vertical)
-        return view
-    }
-
-    func updateUIView(_ view: UIImageView, context: Context) {
-        view.tintColor = tintColor
-        view.preferredSymbolConfiguration = UIImage.SymbolConfiguration(
-            pointSize: pointSize, weight: weight
-        )
-        if context.coordinator.lastSystemName != systemName {
-            view.image = UIImage(systemName: systemName)
-            context.coordinator.lastSystemName = systemName
-        }
-
-        guard spinTrigger != context.coordinator.lastTrigger else { return }
-        context.coordinator.lastTrigger = spinTrigger
-
-        context.coordinator.stopWorkItem?.cancel()
-
-        if clockwise {
-            view.addSymbolEffect(
-                .rotate.clockwise.byLayer,
-                options: .repeating.speed(speed),
-                animated: true
-            )
-        } else {
-            view.addSymbolEffect(
-                .rotate.counterClockwise.byLayer,
-                options: .repeating.speed(speed),
-                animated: true
-            )
-        }
-
-        let cycleDuration = Self.baselineCycleDuration / max(speed, 0.001)
-        let work = DispatchWorkItem { [weak view] in
-            view?.removeAllSymbolEffects(animated: true)
-        }
-        context.coordinator.stopWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + cycleDuration, execute: work)
-    }
-
-    final class Coordinator {
-        var lastTrigger: Int
-        var lastSystemName: String
-        var stopWorkItem: DispatchWorkItem?
-        init(lastTrigger: Int, lastSystemName: String) {
-            self.lastTrigger = lastTrigger
-            self.lastSystemName = lastSystemName
-        }
-    }
 }
 
 // MARK: - Previews
