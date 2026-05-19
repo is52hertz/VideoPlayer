@@ -230,7 +230,7 @@ struct iOSPlayerControls: View {
         // (and gently into the letterbox), which is what the user
         // actually wants — no fancier math needed.
         if videoWidth + 2 * minSideInset < screenSize.width {
-            return videoWidth + 20
+            return videoWidth + 30
         }
         // No letterbox room: reserve worst-case `H:MM:SS` digit width
         // plus a 10pt gap on each side.
