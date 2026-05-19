@@ -35,19 +35,11 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Each tap fires one `.rotate.byLayer` cycle via discrete `value:`
-    // trigger. iOS 26 lets multiple in-flight cycles overlap, so rapid
-    // taps visually pile up into a faster spin — no manual `.speed`,
-    // no `.repeating` gating, no session timers needed.
+    // Bump on each tap to retrigger the one-shot per-layer rotate +
+    // bounce symbol effects. `.rotate.byLayer` keeps the "10" digits
+    // stationary while only the arrow layer spins.
     @State private var forwardSpinTrigger: Int = 0
     @State private var backwardSpinTrigger: Int = 0
-
-    // Per-tap scale pulse — independent of SymbolEffect, so every tap
-    // has crisp physical feedback regardless of how iOS handles cycle
-    // overlap.
-    @State private var forwardTapPulse: Double = 1.0
-    @State private var backwardTapPulse: Double = 1.0
-
     @State private var playBounceTrigger: Int = 0
 
     var body: some View {
@@ -199,10 +191,9 @@ struct iOSPlayerControls: View {
                         options: .nonRepeating,
                         value: backwardSpinTrigger
                     )
-                    .scaleEffect(backwardTapPulse)
+                    .symbolEffect(.bounce, options: .nonRepeating, value: backwardSpinTrigger)
             } action: {
                 backwardSpinTrigger &+= 1
-                pulseBackward()
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
@@ -230,26 +221,11 @@ struct iOSPlayerControls: View {
                         options: .nonRepeating,
                         value: forwardSpinTrigger
                     )
-                    .scaleEffect(forwardTapPulse)
+                    .symbolEffect(.bounce, options: .nonRepeating, value: forwardSpinTrigger)
             } action: {
                 forwardSpinTrigger &+= 1
-                pulseForward()
                 viewModel.seekForward(Self.skipStepSeconds)
             }
-        }
-    }
-
-    private func pulseForward() {
-        forwardTapPulse = 0.88
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) {
-            forwardTapPulse = 1.0
-        }
-    }
-
-    private func pulseBackward() {
-        backwardTapPulse = 0.88
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) {
-            backwardTapPulse = 1.0
         }
     }
 
