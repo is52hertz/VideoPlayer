@@ -36,6 +36,10 @@ iPhone / iPad 端的 forward / backward 跳转按钮（`10.arrow.trianglehead.{c
 
 Apple 的 SF Symbol effect engine 把 `.rotate.byLayer` 的 cycle 时长**视为系统固定值**。`SymbolEffectOptions.speed(_:)` 文档里写着对 discrete effect 无效；实测在 indefinite / repeating 路径下对 `.rotate.byLayer` **也**无效。这一限制**横跨 SwiftUI 和 UIKit**。Apple TV / `AVPlayerViewController` 内部能拿到的 cycle 控制接口要么走私有 API，要么用了不同的 effect 类型 —— 我们当前没办法用公开 API 复刻。
 
+## Empirical timing
+
+- `.rotate.byLayer` one full cycle at speed=1 measured **~1.7s** on iOS 26 (user-verified). Used as `iOSPlayerControls.rotateCooldown` to prevent rapid taps from queueing trailing rotations.
+
 ## Workarounds explored
 
 - **视觉欺骗**（`b8503b6` 落地）：每 tap 用 discrete `value:` 触发一次 byLayer 旋转 + 一个 spring scale pulse。控不了 cycle 时长，但每次 tap 都有清晰物理反馈；连点时多个 cycle 自然叠加，视觉上算"快"。**这是目前最干净的 SwiftUI 实现**。
