@@ -44,7 +44,7 @@ struct RotateSpeedDebugView: View {
                 .font(.title2.bold())
 
             Text(
-                "Apple 文档和 Gemini 都声称 `.symbolEffect(.rotate, options: .repeating.speed(x))` 上的 .speed 会改变旋转速度。我们在 iOS 26 上 14 次实测都判这条无效（见 issues-01.md）。本窗口让你在 macOS 上**用眼睛复测**。\n\n操作：拖 slider 或点预设按钮，看下面两组的反应差异。"
+                "Apple 文档和 Gemini 都声称 `.symbolEffect(.rotate, options: .repeating.speed(x))` 的 .speed 会改变旋转速度。我们在 iOS 26 上 14 次实测都判无效（见 issues-01.md）。\n\n重要：SwiftUI `.symbolEffect` 的 options 似乎**只在 effect 首次 attach 时读取一次**。中途改 speed 不会重启 effect，视觉上不会变。所以本窗口在 slider 拖动结束 / 点预设 / 点 Apply 时都会自动让 triggerCount++，每个 effect 行都 .id(triggerCount) 强制 re-attach。这样能保证 effect 用新 speed 重新启动。"
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -52,7 +52,9 @@ struct RotateSpeedDebugView: View {
 
             HStack(spacing: 12) {
                 Text("Speed:").bold().frame(width: 50, alignment: .leading)
-                Slider(value: $speed, in: 0.1...20.0)
+                Slider(value: $speed, in: 0.1...20.0, onEditingChanged: { editing in
+                    if !editing { triggerCount &+= 1 }
+                })
                 Text(String(format: "%.2f×", speed))
                     .monospacedDigit()
                     .frame(width: 70, alignment: .trailing)
@@ -62,6 +64,7 @@ struct RotateSpeedDebugView: View {
                 ForEach([0.2, 0.5, 1.0, 3.0, 10.0, 20.0], id: \.self) { value in
                     Button(String(format: value < 1 ? "%.1f×" : "%.0f×", value)) {
                         speed = value
+                        triggerCount &+= 1
                     }
                 }
                 Spacer()
@@ -70,7 +73,7 @@ struct RotateSpeedDebugView: View {
             HStack {
                 Toggle("Active (indefinite)", isOn: $isActive)
                 Spacer()
-                Button("Fire discrete trigger") { triggerCount &+= 1 }
+                Button("Apply / Refire all effects") { triggerCount &+= 1 }
                 Text("\(triggerCount)")
                     .monospacedDigit()
                     .frame(width: 40, alignment: .trailing)
@@ -186,6 +189,10 @@ struct RotateSpeedDebugView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .lineLimit(2)
             view()
+                // 关键：triggerCount 一变 → View 身份变 → SwiftUI 拆建子树 →
+                // .symbolEffect 重新 attach 时读最新的 options.speed。否则
+                // slider 中途改 speed 不会传播给已运行的 indefinite effect。
+                .id(triggerCount)
                 .frame(width: 70, height: 70)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
