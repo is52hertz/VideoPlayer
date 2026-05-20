@@ -13,23 +13,20 @@
       }
     }
   },
-  "enabledPlugins": {
-    "swiftui-pro@swiftui-agent-skill": true
-  },
+  "enabledPlugins": {},
   "permissions": {
     "allow": [
       "Read(**)",
-      "Write(/Users/is52hertz/Documents/Projects/VideoPlayer/**)",
-      "Edit(/Users/is52hertz/Documents/Projects/VideoPlayer/**)",
+      "Write(**)",
+      "Edit(**)",
       "Bash(git diff*)",
       "Bash(git status*)",
       "Bash(git log*)",
       "Bash(git show*)",
       "Bash(git add*)",
       "Bash(git commit*)",
-      "Bash(git -C * commit*)",
+      "Bash(git branch*)",
       "Bash(git stash list*)",
-      "Bash(git config*)",
       "Bash(xcodebuild*)",
       "Bash(xcrun simctl*)",
       "Bash(claude plugin*)",

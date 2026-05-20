@@ -9,5 +9,21 @@ DerivedData/
 # macOS
 .DS_Store
 
-# Claude Code
-# .claude/
+# AI assistant config — keep team-shared files (settings.json, skills/),
+# ignore per-user overrides and ephemeral state.
+**/settings.local.json
+.claude/projects/
+.claude/memory/
+.claude/.credentials.json
+.claude/todos/
+.claude/statsig/
+.claude/ide/
+.claude/shell-snapshots/
+
+.gemini/.credentials.json
+.gemini/oauth_creds.json
+.gemini/tmp/
+.gemini/logs/
+
+.kiro/.credentials.json
+.kiro/tmp/
