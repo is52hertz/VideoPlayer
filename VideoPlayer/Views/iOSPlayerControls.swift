@@ -257,7 +257,7 @@ struct iOSPlayerControls: View {
         return HStack(spacing: spacing) {
             circlePlaybackButton(id: "skipBackward", diameter: skipDiameter) {
                 Image(systemName: "10.arrow.trianglehead.counterclockwise")
-                    .font(.system(size: skipIcon, weight: .semibold))
+                    .font(.system(size: skipIcon, weight: .regular))
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise.byLayer,
@@ -294,7 +294,7 @@ struct iOSPlayerControls: View {
 
             circlePlaybackButton(id: "skipForward", diameter: skipDiameter) {
                 Image(systemName: "10.arrow.trianglehead.clockwise")
-                    .font(.system(size: skipIcon, weight: .semibold))
+                    .font(.system(size: skipIcon, weight: .regular))
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise.byLayer,
