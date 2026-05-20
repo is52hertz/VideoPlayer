@@ -110,3 +110,84 @@ Reset to `b8503b6` 的 `iOSPlayerControls.swift`：
 3. **Rive / Lottie**（设计 + 工程协作，但与"Native Apple APIs only"冲突，本仓不走）
 
 我们选 (1)。本 addendum 的存在是为了避免未来接手人重走 14 步死路。
+
+---
+
+## Addendum 2026-05-20 — macOS debug 窗口实测纠正"完全 inert"过早结论
+
+为了反复核查 `.rotate.speed` 行为，做了一个独立的 macOS 调试窗口 `RotateSpeedDebugView`（commit `310b8a9` 初版，`cc167c4` 修方法论 bug；位于 `VideoPlayer/Views/Debug/`，菜单 `File → Rotate Speed Debug` 或 `⌘⇧D` 打开）。窗口里有 5 个 `.rotate` 写法 + 3 个已知可响应 `.speed` 的对照组 + 1 个手动旋转 baseline，每行套 `.id(triggerCount)` 让改 speed 后强制 re-attach effect。
+
+### 实测结果（macOS Tahoe 26 / 等价 iOS 26）
+
+| 行 | 写法 | `.speed` 视觉响应？ |
+|---|---|---|
+| R1 | `.rotate.clockwise + .repeating.speed + isActive:` | **✅ 是** —— 仅 spin 段响应，idle 间隙不响应，且约 **3× 处有 cap**（3× ≈ 20×） |
+| R2 | `.rotate.clockwise.byLayer + .repeating.speed + isActive:` | **✅** 同 R1 |
+| R3 | `.rotate.clockwise.wholeSymbol + .repeating.speed + isActive:` | **✅** 同 R1 |
+| R4 | `.rotate.byLayer + .nonRepeating.speed + value:` | ❌ 丢弃 |
+| R5 | 手动 `.rotationEffect + .animation(.linear).speed`（baseline） | ✅ |
+| C1 | `.bounce + .nonRepeating.speed + value:` | ❌ 丢弃 |
+| C2 | `.pulse + .repeating.speed + isActive:` | ✅ |
+| C3 | `.variableColor.iterative.reversing + .repeating.speed + isActive:` | ✅ |
+
+### 对原结论的修正
+
+原"Conclusion (iOS 26 baseline)" 那句「`.rotate.byLayer` cycle 时长视为系统固定值」**以偏概全**了。准确版本：
+
+- **Discrete 路径**（`.nonRepeating + value:`）：`.speed` 确实被丢弃 —— 这是原 14 次尝试**全部**走的路径，所以早期 14 步**全部失败有合理性**，但当时下"对所有 .rotate 路径都 inert"的结论太大了。
+- **Indefinite 路径**（`.repeating + isActive:`）：`.speed` **真生效**，但有两条隐性限制：
+  - **Idle 段硬编码**：`.rotate` 一个 cycle = "spin 段 + idle 段"，`.speed` 只调 spin，idle 间隙不动。公开 API 没有 `.continuous` / `.noIdle` / `.idleDuration` 之类的开关。
+  - **Speed cap**：约在 3× 处封顶。`.speed(20)` 视觉等于 `.speed(3)` —— 这也解释了原 commit `98ed6cf` 极值测试"看不出差别"被误判为 inert 的现象。
+- 结论的可移植性：以上仅在 macOS 26 / 等价 iOS 26 上验证。早期 iOS 17/18 的行为未重测。
+
+### Apple TV 实现路径推断（巩固上一条 addendum）
+
+Apple TV 的 skip 按钮要同时满足：
+- byLayer 锁数字 ✅
+- 无 idle 连续旋转 ❌（公开 API 不行）
+- 速度可控、无 cap ❌（公开 API cap 在 3×）
+
+公开 API 任意两条可拿，三条不可同得。Apple 必然有 idle / cap / cycle-duration 的私有旋钮 —— 要么走 CAPackage 资源（idle/spin keyframe 直接画在 `.capackage` 里），要么走 `NSSymbolRotateEffect` 的私有属性。**两条都被 CLAUDE.md "Native Apple APIs only" 红线挡掉。**
+
+### Future solution — 路线 X（已设计，未实装；待真实需求触发再做）
+
+如果未来用户反馈当前 `b8503b6` 的 idle 间隙刺眼到值得动 UI，**放弃 `.symbolEffect(.rotate.byLayer)`**，改为手动 `.rotationEffect` + 拆层视觉模拟 byLayer：
+
+```swift
+ZStack {
+    // 纯箭头层 —— SF Symbols 里存在 "arrow.trianglehead.clockwise"
+    // 和 "arrow.trianglehead.counterclockwise"，可独立旋转
+    Image(systemName: spinDirection == .clockwise
+        ? "arrow.trianglehead.clockwise"
+        : "arrow.trianglehead.counterclockwise")
+        .font(.system(size: arrowFontSize, weight: .semibold))
+        .rotationEffect(.degrees(angle))
+        .animation(
+            .linear(duration: targetCycleDuration)
+                .repeatForever(autoreverses: false),
+            value: isSpinning
+        )
+
+    // 数字静态覆盖 —— 字号 / 字重 / kerning 要肉眼调到接近 SF Symbol
+    // 原版 "10.arrow.trianglehead.clockwise" 内嵌的 "10" 样式
+    Text("10")
+        .font(.system(size: digitFontSize, weight: .semibold))
+        .foregroundStyle(.white)
+}
+```
+
+**获得**：
+- ✅ 无 idle（`.repeatForever` 是真正连续）
+- ✅ speed 完全可控、无 cap（`Animation.speed` 没有 3× 限制）
+- ✅ 可打断、可加速（toggle `isSpinning` / 改 `targetCycleDuration`）
+- ✅ byLayer 视觉（数字静态）
+
+**代价**：
+- ⚠️ 字距/字号/字重需肉眼对齐 SF Symbol 原版的 "10"，没有 API 拿原版的精确 metrics
+- ⚠️ 失去 `.symbolEffect` 在数字层的级联能力（不能给 "10" 加 `.bounce` 之类）—— 数字本来也不该 bounce，可接受
+- ⚠️ direction 切换要换 systemName（顺时针 / 逆时针箭头是两个独立符号）
+- ⚠️ iPhone / iPad / portrait / landscape 各尺寸都得目视微调对齐
+
+**工程量**：约 50–100 行改动集中在 `iOSPlayerControls.swift` 的 skip 按钮处；额外做一个 `LayeredSkipIcon` View 复用顺/逆方向。视觉 QA 至少 4 个组合。
+
+**触发条件**：用户反馈 idle 间隙刺眼 / 连续点击 skip 时质感被打断。**未触发前不动**，issues-01.md 当前结论 + 当前 `b8503b6` 状态 = 选项 A 仍然 hold。
