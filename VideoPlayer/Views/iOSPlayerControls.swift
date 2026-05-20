@@ -35,23 +35,24 @@ struct iOSPlayerControls: View {
     // option; keep here for now so the call sites have a single source.
     private static let skipStepSeconds: TimeInterval = 10
 
-    // Bump on each tap to retrigger the one-shot per-layer rotate +
-    // bounce symbol effects. `.rotate.byLayer` keeps the "10" digits
-    // stationary while only the arrow layer spins.
+    // Rotate switched from discrete (.nonRepeating + value:) to
+    // indefinite (.repeating.speed + isActive:) so .speed actually
+    // applies — discrete path drops .speed entirely on iOS 26 (see
+    // issues-01.md 2026-05-20 addendum). Requested .speed(20) gets
+    // clamped to ~3× system cap, giving roughly a ~0.57s spin segment
+    // out of the default ~1.7s cycle. We keep isActive on for
+    // spinDuration after the latest tap, so connected taps extend
+    // into one continuous fast spin instead of queueing tails.
     //
-    // Rotate and bounce use independent triggers so we can throttle
-    // rotate to one cycle per `rotateCooldown`. SwiftUI's discrete
-    // .rotate doesn't interrupt — each value-change queues another
-    // cycle, so connected taps without throttling drain into a visible
-    // tail of extra spins after the user stops tapping. Bounce is
-    // short-lived and looks fine without throttle.
-    private static let rotateCooldown: TimeInterval = 1.7
-    @State private var forwardSpinTrigger: Int = 0
-    @State private var backwardSpinTrigger: Int = 0
+    // Bounce stays on the discrete trigger (it's short and the
+    // queueing tail issue doesn't apply at .bounce's natural cadence).
+    private static let spinDuration: TimeInterval = 0.6
+    @State private var isForwardSpinning = false
+    @State private var isBackwardSpinning = false
+    @State private var forwardSpinTask: Task<Void, Never>?
+    @State private var backwardSpinTask: Task<Void, Never>?
     @State private var forwardBounceTrigger: Int = 0
     @State private var backwardBounceTrigger: Int = 0
-    @State private var lastForwardRotateTime: Date = .distantPast
-    @State private var lastBackwardRotateTime: Date = .distantPast
     @State private var playBounceTrigger: Int = 0
 
     var body: some View {
@@ -226,16 +227,18 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.counterClockwise.byLayer,
-                        options: .nonRepeating,
-                        value: backwardSpinTrigger
+                        options: .repeating.speed(20),
+                        isActive: isBackwardSpinning
                     )
                     .symbolEffect(.bounce, options: .nonRepeating, value: backwardBounceTrigger)
             } action: {
                 backwardBounceTrigger &+= 1
-                let now = Date()
-                if now.timeIntervalSince(lastBackwardRotateTime) >= Self.rotateCooldown {
-                    backwardSpinTrigger &+= 1
-                    lastBackwardRotateTime = now
+                isBackwardSpinning = true
+                backwardSpinTask?.cancel()
+                backwardSpinTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(Self.spinDuration))
+                    guard !Task.isCancelled else { return }
+                    isBackwardSpinning = false
                 }
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
@@ -261,16 +264,18 @@ struct iOSPlayerControls: View {
                     .foregroundStyle(.white)
                     .symbolEffect(
                         .rotate.clockwise.byLayer,
-                        options: .nonRepeating,
-                        value: forwardSpinTrigger
+                        options: .repeating.speed(20),
+                        isActive: isForwardSpinning
                     )
                     .symbolEffect(.bounce, options: .nonRepeating, value: forwardBounceTrigger)
             } action: {
                 forwardBounceTrigger &+= 1
-                let now = Date()
-                if now.timeIntervalSince(lastForwardRotateTime) >= Self.rotateCooldown {
-                    forwardSpinTrigger &+= 1
-                    lastForwardRotateTime = now
+                isForwardSpinning = true
+                forwardSpinTask?.cancel()
+                forwardSpinTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(Self.spinDuration))
+                    guard !Task.isCancelled else { return }
+                    isForwardSpinning = false
                 }
                 viewModel.seekForward(Self.skipStepSeconds)
             }
