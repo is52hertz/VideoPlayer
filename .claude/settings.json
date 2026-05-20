@@ -41,7 +41,8 @@
       "mcp__XcodeBuildMCP__*",
       "mcp__xcode__*",
       "mcp__plugin_*",
-      "Skill(*)"
+      "Skill(*)",
+      "WebSearch"
     ],
     "deny": [
       "Bash(rm -rf*)"

@@ -20,9 +20,7 @@ struct PlayerView: View {
                     .ignoresSafeArea()
 
                 controlsOverlay
-                    .opacity(viewModel.isControlsVisible ? 1 : 0)
                     .allowsHitTesting(viewModel.isControlsVisible)
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.isControlsVisible)
             }
             .contentShape(Rectangle())
             .onTapGesture {

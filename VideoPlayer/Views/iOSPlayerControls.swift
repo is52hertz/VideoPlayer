@@ -19,7 +19,21 @@ struct iOSPlayerControls: View {
     @State private var lastZone: Int?
     @State private var screenSize: CGSize = .zero
 
+    // Namespace for `.glassEffectID(_, in:)`. Required so SwiftUI can
+    // track the play button's glass material identity across the
+    // conditional add/remove that drives `.glassEffectTransition(.materialize)`.
+    @Namespace private var glassNamespace
+
     private var isScrubActive: Bool { isScrubbing || isFlinging }
+
+    // Unified gate for all glass materials in the HUD. Glass is present
+    // only when the control panel is up AND the user isn't scrubbing.
+    // Flipping this drives every `.glassEffectTransition(.materialize)`
+    // in the overlay simultaneously — the canonical Apple-TV-style
+    // release on both panel toggle and progress bar engagement.
+    private var isGlassVisible: Bool {
+        viewModel.isControlsVisible && !isScrubActive
+    }
 
     // Scale visually via `.scaleEffect` so the bar isn't squeezed —
     // the text frame keeps its base width and 16/12 magnification
@@ -64,7 +78,7 @@ struct iOSPlayerControls: View {
                 .accessibilityHidden(true)
 
             vignette
-                .opacity(isScrubActive ? 0 : 1)
+                .opacity((isScrubActive || !viewModel.isControlsVisible) ? 0 : 1)
 
             VStack(spacing: 0) {
                 topBar
@@ -86,7 +100,8 @@ struct iOSPlayerControls: View {
         } action: { newValue in
             screenSize = newValue
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isScrubActive)
+        .animation(.spring(response: 0.2, dampingFraction: 0.65), value: isScrubActive)
+        .animation(.spring(response: 0.2, dampingFraction: 0.75), value: viewModel.isControlsVisible)
     }
 
     // MARK: - Top bar
@@ -108,19 +123,39 @@ struct iOSPlayerControls: View {
     }
 
     private func glassIconButton(systemName: String, action: @escaping () -> Void) -> some View {
+        // Pattern B via `.background`: content drives intrinsic size,
+        // glass capsule sits behind it as a conditionally-mounted
+        // GlassEffectContainer child. Content fades via `.opacity`,
+        // glass dematerializes via `.glassEffectTransition(.materialize)`.
         Image(systemName: systemName)
             .font(.system(size: isPad ? 18 : 16, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
-            .opacity(isScrubActive ? 0 : 1)
             .padding(.horizontal, isPad ? 14 : 12)
             .padding(.vertical, isPad ? 10 : 8)
+            .opacity(isGlassVisible ? 1 : 0)
+            .background(glassPillBackground(id: "glassIconButton_\(systemName)"))
             .contentShape(Capsule())
-            .glassEffect(.clear.interactive(), in: Capsule())
-            .scaleEffect(isScrubActive ? 0.6 : 1.0)
-            .opacity(isScrubActive ? 0 : 1)
-            .onTapGesture { action() }
+            .onTapGesture {
+                guard isGlassVisible else { return }
+                action()
+            }
             .accessibilityAddTraits(.isButton)
+    }
+
+    // Reusable Pattern-B background for capsule-shaped pills in the top
+    // bar. Sized by the content view via `.background { ... }`; the
+    // conditional `.glassEffect` host carries the materialize transition.
+    private func glassPillBackground(id: String) -> some View {
+        GlassEffectContainer(spacing: 20) {
+            if isGlassVisible {
+                Capsule()
+                    .fill(Color.clear)
+                    .glassEffect(.clear.interactive(), in: Capsule())
+                    .glassEffectTransition(.materialize)
+                    .glassEffectID(id, in: glassNamespace)
+            }
+        }
     }
 
     private var utilityPill: some View {
@@ -132,9 +167,8 @@ struct iOSPlayerControls: View {
                 // Future: handle PiP
             }
         }
-        .glassEffect(.clear.interactive(), in: Capsule())
-        .scaleEffect(isScrubActive ? 0.6 : 1.0)
-        .opacity(isScrubActive ? 0 : 1)
+        .opacity(isGlassVisible ? 1 : 0)
+        .background(glassPillBackground(id: "utilityPill"))
     }
 
     private func utilityIconButton(systemName: String, action: @escaping () -> Void) -> some View {
@@ -142,11 +176,13 @@ struct iOSPlayerControls: View {
             .font(.system(size: isPad ? 18 : 16, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: isPad ? 28 : 24, height: isPad ? 28 : 24)
-            .opacity(isScrubActive ? 0 : 1)
             .padding(.horizontal, isPad ? 14 : 12)
             .padding(.vertical, isPad ? 10 : 8)
             .contentShape(Rectangle())
-            .onTapGesture { action() }
+            .onTapGesture {
+                guard isGlassVisible else { return }
+                action()
+            }
             .accessibilityAddTraits(.isButton)
     }
 
@@ -156,10 +192,10 @@ struct iOSPlayerControls: View {
             // Text("\(Int(viewModel.systemVolume * 100))%")
             //     .font(.system(size: 12).monospacedDigit())
             //     .foregroundStyle(.white.opacity(0.85))
-            //     .opacity(isScrubActive ? 0 : 1)
 
             volumeScrubber
                 .frame(width: isPad ? 176 : 120)
+                .allowsHitTesting(isGlassVisible)
                 .opacity(isScrubActive ? 0 : 1)
 
             Image(
@@ -183,13 +219,11 @@ struct iOSPlayerControls: View {
                 // (= speaker.wave.3.fill @ 16pt semibold 的视觉宽度，
                 // 留 2pt 余量)，居中对齐让两种符号都在槽位中心。
                 .frame(width: 24, alignment: .center)
-                .opacity(isScrubActive ? 0 : 1)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .glassEffect(.clear.interactive(), in: Capsule())
-        .scaleEffect(isScrubActive ? 0.6 : 1.0)
-        .opacity(isScrubActive ? 0 : 1)
+        .opacity(isGlassVisible ? 1 : 0)
+        .background(glassPillBackground(id: "volumePill"))
     }
 
     private var volumeIconSystemName: String {
@@ -221,7 +255,7 @@ struct iOSPlayerControls: View {
         let skipIcon: CGFloat = isPad ? 58 : (isCompactHeight ? 40 : 38)
 
         return HStack(spacing: spacing) {
-            circlePlaybackButton(diameter: skipDiameter) {
+            circlePlaybackButton(id: "skipBackward", diameter: skipDiameter) {
                 Image(systemName: "10.arrow.trianglehead.counterclockwise")
                     .font(.system(size: skipIcon, weight: .semibold))
                     .foregroundStyle(.white)
@@ -243,7 +277,7 @@ struct iOSPlayerControls: View {
                 viewModel.seekBackward(Self.skipStepSeconds)
             }
 
-            circlePlaybackButton(diameter: playDiameter) {
+            circlePlaybackButton(id: "playPause", diameter: playDiameter) {
                 Image(systemName: playPauseIcon)
                     .font(.system(size: playIcon, weight: .semibold))
                     .foregroundStyle(.white)
@@ -258,7 +292,7 @@ struct iOSPlayerControls: View {
                 viewModel.togglePlayPause()
             }
 
-            circlePlaybackButton(diameter: skipDiameter) {
+            circlePlaybackButton(id: "skipForward", diameter: skipDiameter) {
                 Image(systemName: "10.arrow.trianglehead.clockwise")
                     .font(.system(size: skipIcon, weight: .semibold))
                     .foregroundStyle(.white)
@@ -283,18 +317,41 @@ struct iOSPlayerControls: View {
     }
 
     private func circlePlaybackButton<Label: View>(
+        id: String,
         diameter: CGFloat,
         @ViewBuilder label: () -> Label,
         action: @escaping () -> Void
     ) -> some View {
-        label()
+        // Pattern B (see .claude/skills/glass-know): glass-bearing
+        // transparent Circle below, content (symbol) on the ZStack
+        // top layer. Glass conditional on `isGlassVisible` so the
+        // `.materialize` transition fires on both panel show/hide
+        // and scrub start/end. Content fades via plain `.opacity`,
+        // independent of the materialize blur.
+        ZStack {
+            GlassEffectContainer(spacing: 20) {
+                if isGlassVisible {
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: diameter, height: diameter)
+                        .glassEffect(.clear.interactive(), in: Circle())
+                        .glassEffectTransition(.materialize)
+                        .glassEffectID(id, in: glassNamespace)
+                }
+            }
             .frame(width: diameter, height: diameter)
-            .contentShape(Circle())
-            .glassEffect(.clear.interactive(), in: Circle())
-            .scaleEffect(isScrubActive ? 0.6 : 1.0)
-            .opacity(isScrubActive ? 0 : 1)
-            .onTapGesture { action() }
-            .accessibilityAddTraits(.isButton)
+
+            label()
+                .opacity(isGlassVisible ? 1 : 0)
+                .allowsHitTesting(false)
+        }
+        .frame(width: diameter, height: diameter)
+        .contentShape(Circle())
+        .onTapGesture {
+            guard isGlassVisible else { return }
+            action()
+        }
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Bottom bar
@@ -315,10 +372,11 @@ struct iOSPlayerControls: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
                     .allowsHitTesting(false)
-                    .opacity(isScrubActive ? 0 : 1)
+                    .opacity(isGlassVisible ? 1 : 0)
             }
 
             progressRow
+                .opacity(viewModel.isControlsVisible ? 1 : 0)
         }
         .fixedSize(horizontal: true, vertical: false)
         .frame(maxWidth: .infinity, alignment: .center)
