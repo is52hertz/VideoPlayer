@@ -1,0 +1,3 @@
+## 2024-09-03 - Avoid Zero-Tolerance Seeks During Drag
+**Learning:** Found that `GlassSlider` on macOS was calling `seek(to:)` directly on every frame of a drag gesture. In `AVPlayerEngine`, `seek(to:)` uses zero-tolerance which forces precise frame decoding. At 60Hz, this causes massive decoder backlog and main thread stalls.
+**Action:** Always use `seekScrubbing` (or `scrub(to:)`) during continuous drag events (which uses `positiveInfinity` tolerance to snap to I-frames) and only fire a final `seek(to:)` with zero tolerance on release. Added `onEditingChanged` to `GlassSlider` to facilitate this and correctly manage `isInteractingWithControls` to prevent unwanted auto-hiding during interaction.

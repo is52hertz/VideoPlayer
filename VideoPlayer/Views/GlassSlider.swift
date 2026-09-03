@@ -3,6 +3,7 @@ import SwiftUI
 struct GlassSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
+    var onEditingChanged: ((Bool) -> Void)? = nil
     
     @State private var isDragging = false
     @State private var dragValue: Double? = nil
@@ -31,6 +32,9 @@ struct GlassSlider: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { gesture in
+                        if !isDragging {
+                            onEditingChanged?(true)
+                        }
                         isDragging = true
                         let percentage = min(max(0, gesture.location.x / geometry.size.width), 1)
                         let newValue = range.lowerBound + (range.upperBound - range.lowerBound) * Double(percentage)
@@ -40,6 +44,7 @@ struct GlassSlider: View {
                     .onEnded { _ in
                         isDragging = false
                         dragValue = nil
+                        onEditingChanged?(false)
                     }
             )
         }
