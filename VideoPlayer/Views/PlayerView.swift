@@ -154,9 +154,21 @@ struct PlayerView: View {
                         GlassSlider(
                             value: Binding(
                                 get: { viewModel.currentTime },
-                                set: { viewModel.seek(to: $0) }
+                                set: { newValue in
+                                    if viewModel.isInteractingWithControls {
+                                        viewModel.scrub(to: newValue)
+                                    } else {
+                                        viewModel.seek(to: newValue)
+                                    }
+                                }
                             ),
-                            range: 0...max(viewModel.duration, 1)
+                            range: 0...max(viewModel.duration, 1),
+                            onEditingChanged: { editing in
+                                viewModel.isInteractingWithControls = editing
+                                if !editing {
+                                    viewModel.seek(to: viewModel.currentTime)
+                                }
+                            }
                         )
 
                         Text(formatTime(viewModel.duration))
